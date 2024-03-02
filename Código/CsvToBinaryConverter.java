@@ -10,26 +10,40 @@ public class CsvToBinaryConverter {
     // CRUD
 
     // Create
-    public static void create(String binaryFilePath, Carro registroCarro) {
+    public static void create(String binaryFilePath, Carro registroCarro) throws IOException {
         try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "rw")) {
-            raf.seek(raf.length()); // Posiciona o ponteiro no final do arquivo
-            byte[] registroCarroBytes = serializeCarro(registroCarro);
-            // Escreve a lápide (0 para registro válido, 1 para registro excluído)
-            raf.writeByte(0);
-            // Escreve o tamanho do registro
-            raf.writeInt(registroCarroBytes.length);
-            // Escreve o registro em si
-            raf.write(registroCarroBytes);
-            System.out.println("CREATE: "+registroCarro.toString());
-            System.out.println("Tamanho do registro: "+registroCarroBytes.length);
-            for (byte b : registroCarroBytes) {
-                System.out.print(String.format("%02X ", b));
+            boolean registroExiste = false;
+    
+            while (raf.getFilePointer() < raf.length()) {
+                byte lapide = raf.readByte();
+                int tamanhoRegistro = raf.readInt();
+    
+                if (lapide != 1) {
+                    byte[] registroAtualBytes = new byte[tamanhoRegistro];
+                    raf.readFully(registroAtualBytes);
+                    Carro carroExistente = deserializeCarro(registroAtualBytes);
+    
+                    if (carroExistente.getId().equals(registroCarro.getId())) {
+                        registroExiste = true;
+                        break;
+                    }
+                } else {
+                    raf.skipBytes(tamanhoRegistro);
+                }
             }
-            System.out.println();    
-        } catch (IOException e) {
-            e.printStackTrace();
+    
+            if (!registroExiste) {
+                raf.seek(raf.length()); // Posiciona o ponteiro no final do arquivo
+                byte[] registroCarroBytes = serializeCarro(registroCarro);
+                raf.writeByte(0); // Escreve a lápide (0 para registro válido, 1 para registro excluído)
+                raf.writeInt(registroCarroBytes.length); // Escreve o tamanho do registro
+                raf.write(registroCarroBytes); // Escreve o registro em si
+            } else {
+                //System.out.println("Registro com ID " + registroCarro.getId() + " já existe.");
+            }
         }
-    }   
+    }
+       
 
     // ReadAll - lê todos os registros
     public static void readAll(String binaryFilePath) {
@@ -41,7 +55,7 @@ public class CsvToBinaryConverter {
                     byte[] recordBytes = new byte[recordSize];
                     raf.readFully(recordBytes); // Lê o registro
                     Carro carro = deserializeCarro(recordBytes); // Desserializa
-                    System.out.println("Lendo registro: "+carro.toString());
+                    System.out.println("Sport Car: "+carro.toString());
                 } else {
                     raf.skipBytes(recordSize);
                 }
@@ -213,7 +227,7 @@ public class CsvToBinaryConverter {
     }
     
 
-    // Main
+    /* Main 
 
     public static void main(String[] args) throws IOException {
         String csvFilePath = "./dataset/TABELA-FINAL.csv";
@@ -276,4 +290,5 @@ public class CsvToBinaryConverter {
         // Ver se precisamos tratar ou separar os dados de hp e torque. Talvez criar outro objeto ou armazenar em um array de inteiros ou de floats.
 
     }
+    */
 }

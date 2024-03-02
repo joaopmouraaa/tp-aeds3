@@ -81,6 +81,7 @@ public class Carro implements Serializable {
 
     public void setDate(String date) {
         this.date = date;
+        this.dateInMilliseconds = DateConverter.convertDateToMillis(date);
     }
 
     public void setDateInMilliseconds(long dateInMilliseconds) {
@@ -104,7 +105,7 @@ public class Carro implements Serializable {
                 ", carModel='" + carModel + '\'' +
                 ", hp_Torque='" + hp_Torque + '\'' +
                 ", date='" + date + '\'' +
-                ", dateInMilliseconds=" + dateInMilliseconds +
+                ", dateInMilliseconds='" + dateInMilliseconds + '\'' +
                 ", zeroToSixty=" + zeroToSixty +
                 ", price=" + price +
                 '}';
