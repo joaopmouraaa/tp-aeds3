@@ -3,7 +3,7 @@ import java.io.Serializable;
 
 public class Carro implements Serializable {
     // Atributos da classe
-    private String id; // String de tamanho fixo
+    private int id; // String de tamanho fixo
     private String carMake; // String de tamanho variável (Marca)
     private String carModel; // String de tamanho variável (Modelo)
     private String hp_Torque; // Lista de valores com separador (Horsepower_Torque)
@@ -18,7 +18,7 @@ public class Carro implements Serializable {
         //
     }
 
-    public Carro(String id, String carMake, String carModel, String hpTorque, String dateString, float zeroToSixty,
+    public Carro(int id, String carMake, String carModel, String hpTorque, String dateString, float zeroToSixty,
             float price) {
         this.id = id;
         this.carMake = carMake;
@@ -31,7 +31,7 @@ public class Carro implements Serializable {
     }
 
     // Getters e setters para cada atributo
-    public String getId() {
+    public int getId() {
         return id;
     }
 
@@ -63,7 +63,7 @@ public class Carro implements Serializable {
         return price;
     }
 
-    public void setId(String id) {
+    public void setId(int id) {
         this.id = id;
     }
 
