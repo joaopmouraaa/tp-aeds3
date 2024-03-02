@@ -71,9 +71,19 @@ public class CsvToBinaryConverter {
             boolean isFound = false;
             while (raf.getFilePointer() < raf.length()) {
                 byte lapide = raf.readByte();
+                System.out.print("Ponteiro: "+raf.getFilePointer()+" / Tamanho do arquivo: "+raf.length()+ " / Lápide: "+lapide);
+                if (lapide == 1) {
+                    System.out.println("Registro excluído. Pulando...");
+                    int recordSize = raf.readInt();
+                    raf.skipBytes(recordSize);
+                    continue;
+                }
                 int recordSize = raf.readInt();
+                System.out.println(" / Tamanho do registro: "+recordSize);
                 byte[] recordBytes = new byte[recordSize];
-                raf.readFully(recordBytes);
+                try {
+                    raf.readFully(recordBytes);
+                } catch (EOFException e) {}
                 if (lapide == 0) {
                     Carro carro = deserializeCarro(recordBytes);
                     if (carro.getId().equals(carId)) {
@@ -116,7 +126,8 @@ public class CsvToBinaryConverter {
                         // Substitui no local
                         file.seek(posicaoAtual);
                         file.writeByte(0); // Escreve lápide como válida
-                        file.writeInt(registroAtualizadoBytes.length); // Escreve o tamanho
+                        file.writeInt(tamanhoRegistro);
+                        // file.writeInt(registroAtualizadoBytes.length); // não pode atualizar o tamanho do registro se ele for menor
                         file.write(registroAtualizadoBytes);
                     } else {
                         // Marca com lápide e adiciona no final
@@ -124,7 +135,7 @@ public class CsvToBinaryConverter {
                         file.writeByte(1); // Marca com lápide
                         file.seek(file.length());
                         file.writeByte(0); // Nova lápide válida
-                        file.writeInt(registroAtualizadoBytes.length);
+                        file.writeInt(registroAtualizadoBytes.length); // atualiza o registro, já que é maior
                         file.write(registroAtualizadoBytes);
                     }
                     break;
