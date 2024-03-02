@@ -55,7 +55,7 @@ public class CsvToBinaryConverter {
                     byte[] recordBytes = new byte[recordSize];
                     raf.readFully(recordBytes); // Lê o registro
                     Carro carro = deserializeCarro(recordBytes); // Desserializa
-                    System.out.println("Sport Car: " + carro.toString());
+                    // System.out.println("Sport Car: " + carro.toString());
                 } else {
                     raf.skipBytes(recordSize);
                 }
@@ -66,15 +66,15 @@ public class CsvToBinaryConverter {
     }
 
     // ReadById - lê um registro específico (recebe o ID do registro como parâmetro)
-    public static void readById(String binaryFilePath, int carId) {
+    public static boolean readById(String binaryFilePath, int carId) {
+        boolean isFound = false;
         try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
-            boolean isFound = false;
             while (raf.getFilePointer() < raf.length()) {
                 byte lapide = raf.readByte();
                 System.out.print("Ponteiro: " + raf.getFilePointer() + " / Tamanho do arquivo: " + raf.length()
                         + " / Lápide: " + lapide);
                 if (lapide == 1) {
-                    System.out.println("Registro excluído. Pulando...");
+                    System.out.println(" Registro excluído. Pulando...");
                     int recordSize = raf.readInt();
                     raf.skipBytes(recordSize);
                     continue;
@@ -84,14 +84,13 @@ public class CsvToBinaryConverter {
                 byte[] recordBytes = new byte[recordSize];
                 try {
                     raf.readFully(recordBytes);
-                } catch (EOFException e) {
-                }
+                } catch (EOFException e) {}
                 if (lapide == 0) {
                     Carro carro = deserializeCarro(recordBytes);
                     if (carro.getId() == carId) {
-                        System.out.println("Registro encontrado: " + carro.toString());
+                        System.out.println(" Registro encontrado: " + carro.toString());
                         isFound = true;
-                        break;
+                        return isFound;
                     }
                 }
             }
@@ -101,6 +100,7 @@ public class CsvToBinaryConverter {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return isFound;
     }
 
     // Update
@@ -113,6 +113,7 @@ public class CsvToBinaryConverter {
             int tamanhoRegistro = file.readInt();
 
             if (lapide != 1) { // Checa se o registro não está marcado com lápide
+                System.out.println("Lapide: " + lapide + " / Tamanho do registro: " + tamanhoRegistro);
                 byte[] registroAtualBytes = new byte[tamanhoRegistro];
                 file.readFully(registroAtualBytes);
 
