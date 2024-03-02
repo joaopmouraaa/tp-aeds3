@@ -41,12 +41,12 @@ public class Aplicacao {
                     break;
                 case "2":
                     System.out.print("Digite o ID do registro que deseja ler: ");
-                    String idRead = reader.readLine();
+                    int idRead = Integer.parseInt(reader.readLine());
                     CsvToBinaryConverter.readById(binaryFilePath, idRead);
                     break;
                 case "3":
                     System.out.print("Digite o ID do carro que deseja atualizar: ");
-                    String idAtualiza = reader.readLine();
+                    int idAtualiza = Integer.parseInt(reader.readLine());
 
                     // Cria um objeto Carro para representar os dados atualizados
                     Carro carroAtualizado = new Carro();
@@ -108,7 +108,7 @@ public class Aplicacao {
                     break;
                 case "4":
                     System.out.print("Digite o ID do carro que deseja deletar: ");
-                    String idDelete = reader.readLine();
+                    int idDelete = Integer.parseInt(reader.readLine());
 
                     // Chama o método de deleção
                     CsvToBinaryConverter.deleteById(binaryFilePath, idDelete);
@@ -132,7 +132,7 @@ public class Aplicacao {
                 continue;
 
             String[] data = line.split(";");
-            Carro carro = new Carro(data[0], data[1], data[2], data[3], data[4], Float.parseFloat(data[5]),
+            Carro carro = new Carro(Integer.parseInt(data[0]), data[1], data[2], data[3], data[4], Float.parseFloat(data[5]),
                     Float.parseFloat(data[6].replaceAll("\\,", "")));
             CsvToBinaryConverter.create(binaryFilePath, carro);
 
