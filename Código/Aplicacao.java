@@ -49,8 +49,8 @@ public class Aplicacao {
                                 String carMake = reader.readLine();
                                 System.out.print("Digite o modelo do carro: ");
                                 String carModel = reader.readLine();
-                                System.out.print("Digite a potência e torque do carro: ");
-                                String hpTorque = reader.readLine();
+                                System.out.print("Digite a potência e torque do carro separados por virgula: ");
+                                String[] hpTorque = reader.readLine().split(",");
                                 System.out.print("Digite a data de lançamento do carro: ");
                                 String date = reader.readLine();
                                 System.out.print("Digite o tempo de 0-60 MPH do carro: ");
@@ -114,8 +114,9 @@ public class Aplicacao {
                     // Solicita a atualização do campo 'Horsepower_Torque'
                     System.out.print("Atualizar 'Horsepower_Torque' (Digite '-' para manter inalterado): ");
                     String hpTorque = reader.readLine();
+                    String[] hpTorqueArray = hpTorque.split(",");
                     if (!"-".equals(hpTorque)) {
-                        carroAtualizado.setHp_Torque(hpTorque);
+                        carroAtualizado.setHp_Torque(hpTorqueArray);
                         contadorCamposAtualizados++;
                     }
                     // Solicita a atualização da data
@@ -169,20 +170,29 @@ public class Aplicacao {
     private static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath) throws IOException {
         List<String> lines = Files.readAllLines(Paths.get(csvFilePath));
         int contadorRegistros = 0;
+    
         for (String line : lines) {
-            // Supondo que a primeira linha seja o cabeçalho
-            if (lines.indexOf(line) == 0)
-                continue;
-
+            if (lines.indexOf(line) == 0) continue; // Ignora o cabeçalho
+        
             String[] data = line.split(";");
-            Carro carro = new Carro(Integer.parseInt(data[0]), data[1], data[2], data[3], data[4], Float.parseFloat(data[5]),
-                    Float.parseFloat(data[6].replaceAll("\\,", "")));
+            String[] hpTorqueArray = data[3].split(","); // Divide a string hp_Torque em um array
+            
+            Carro carro = new Carro(
+                Integer.parseInt(data[0]), // ID
+                data[1], // Car Make
+                data[2], // Car Model
+                hpTorqueArray, // hpTorque como um array (dividido pela vírgula)
+                data[4], // Data
+                Float.parseFloat(data[5]), // 0-60 MPH Time
+                Float.parseFloat(data[6].replaceAll("\\,", "")) // Preço
+            );
+        
             CsvToBinaryConverter.create(binaryFilePath, carro);
-
             contadorRegistros++;
-            idCounter++;
         }
+        
+    
         System.out.println("Total de registros criados: " + contadorRegistros);
-
     }
+    
 }

@@ -1,9 +1,4 @@
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.attribute.FileTime; // nao usado
-import java.util.List;
-import java.util.Base64; // nao usado
 
 public class CsvToBinaryConverter {
 
@@ -55,7 +50,7 @@ public class CsvToBinaryConverter {
                     byte[] recordBytes = new byte[recordSize];
                     raf.readFully(recordBytes); // Lê o registro
                     Carro carro = deserializeCarro(recordBytes); // Desserializa
-                    // System.out.println("Sport Car: " + carro.toString());
+                    System.out.println("Sport Car: " + carro.toString());
                 } else {
                     raf.skipBytes(recordSize);
                 }
@@ -84,7 +79,8 @@ public class CsvToBinaryConverter {
                 byte[] recordBytes = new byte[recordSize];
                 try {
                     raf.readFully(recordBytes);
-                } catch (EOFException e) {}
+                } catch (EOFException e) {
+                }
                 if (lapide == 0) {
                     Carro carro = deserializeCarro(recordBytes);
                     if (carro.getId() == carId) {
@@ -192,7 +188,11 @@ public class CsvToBinaryConverter {
         dos.writeInt(registroCarro.getId());
         dos.writeUTF(registroCarro.getCarMake());
         dos.writeUTF(registroCarro.getCarModel());
-        dos.writeUTF(registroCarro.getHp_Torque());
+        String[] hpTorque = registroCarro.getHp_Torque();
+        dos.writeInt(hpTorque.length); // Escreve o tamanho do array
+        for (String hp : hpTorque) {
+            dos.writeUTF(hp); // Escreve cada elemento do array
+        }
         dos.writeLong(registroCarro.getDateInMilliseconds());
         dos.writeFloat(registroCarro.getZeroToSixty());
         dos.writeFloat(registroCarro.getPrice());
@@ -206,7 +206,12 @@ public class CsvToBinaryConverter {
             int id = dis.readInt();
             String carMake = dis.readUTF();
             String carModel = dis.readUTF();
-            String hpTorque = dis.readUTF();
+            // Deserialização de hp_Torque
+            int hpTorqueSize = dis.readInt(); // Lê o tamanho do array
+            String[] hpTorque = new String[hpTorqueSize];
+            for (int i = 0; i < hpTorqueSize; i++) {
+                hpTorque[i] = dis.readUTF(); // Lê cada elemento do array
+            }
             long dateInMilliseconds = dis.readLong();
             float zeroToSixty = dis.readFloat();
             float price = dis.readFloat();
@@ -241,74 +246,4 @@ public class CsvToBinaryConverter {
             carro.setPrice(carroAtualizado.getPrice());
         }
     }
-
-    /*
-     * Main
-     * 
-     * public static void main(String[] args) throws IOException {
-     * String csvFilePath = "./dataset/TABELA-FINAL.csv";
-     * String binaryFilePath = "./dataset/binario.bin";
-     * 
-     * // Create - a partir do CSV, salvando no DB
-     * try {
-     * List<String> lines = Files.readAllLines(Paths.get(csvFilePath));
-     * for (int i = 1; i < lines.size(); i++) {
-     * //for (int i = 1; i < 2; i++) { // aqui eu tava testando só com um registro
-     * String line = lines.get(i);
-     * String[] data = line.split(";");
-     * Carro registroCarro = new Carro(
-     * data[0], // id
-     * data[1], // carMake
-     * data[2], // carModel
-     * data[3], // hp_Torque
-     * data[4], // dateString
-     * Float.parseFloat(data[5]), // zeroToSixty
-     * Float.parseFloat(data[6].replaceAll("\\,", "")) // price
-     * );
-     * create(binaryFilePath, registroCarro);
-     * }
-     * } catch (IOException e) {
-     * e.printStackTrace();
-     * }
-     * 
-     * // Teste de operações por id
-     * String testCarId = "1"; // No caso é o Porsche 911
-     * Carro carroUpdate = new Carro();
-     * carroUpdate.setId("0");
-     * carroUpdate.setCarMake("Audi");
-     * carroUpdate.setCarModel("tt");
-     * //carroUpdate.setHp_Torque("120, 70");
-     * //carroUpdate.setDateInMilliseconds(1641006000000l);
-     * //carroUpdate.setZeroToSixty(16f);
-     * //carroUpdate.setPrice(40000.0f);
-     * 
-     * update("0", carroUpdate, binaryFilePath);
-     * System.out.println();
-     * 
-     * 
-     * 
-     * // Teste do ReadAll - val mostrar todos os registros
-     * //readAll(binaryFilePath);
-     * 
-     * // Teste do ReadById - vai falar que foi encontrado e mostrar o registro
-     * readById(binaryFilePath, "0");
-     * 
-     * // Teste DeleteById - vai falar que foi deletado
-     * //deleteById(binaryFilePath, testCarId);
-     * 
-     * // Teste ReadById após Delete - vai falar que não foi encontrado
-     * //readById(binaryFilePath, testCarId);
-     * 
-     * // Observações:
-     * // Criar o Update, que é o mais difícil
-     * // Sempre que a gente roda este arquivo, ele adiciona mais registros ao
-     * arquivo binário. Não recria o arquivo. Se rodar mais de uma vez, vai ter
-     * registros repetidos.
-     * // A gente precisa ver se precisamos guardar a data tanto em milissegundos
-     * quanto em string no objeto.
-     * // Ver se precisamos tratar ou separar os dados de hp e torque. Talvez criar
-     * outro objeto ou armazenar em um array de inteiros ou de floats.
-     * 
-     * }
-     */
 }
