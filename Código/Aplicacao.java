@@ -189,6 +189,7 @@ public class Aplicacao {
         
             CsvToBinaryConverter.create(binaryFilePath, carro);
             contadorRegistros++;
+            idCounter++;
         }
         
     
