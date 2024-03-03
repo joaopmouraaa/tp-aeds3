@@ -6,7 +6,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class Aplicacao {
-
+    private static int idCounter = 0;
     public static void main(String[] args) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         String binaryFilePath = "./dataset/binario.bin";
@@ -14,7 +14,7 @@ public class Aplicacao {
 
         while (true) {
             System.out.println("Escolha uma opção:");
-            System.out.println("0. Criar Base de Dados por File Path");
+            System.out.println("0. Criar novo registro");
             System.out.println("1. Ler todos os registros");
             System.out.println("2. Ler registro por ID");
             System.out.println("3. Atualizar registro por ID");
@@ -26,13 +26,52 @@ public class Aplicacao {
 
             switch (choice) {
                 case "0":
-                    System.out.print("Digite o caminho do arquivo CSV (ou digite \"-\" para usar o diretório padrão): ");
-                    csvFilePath = reader.readLine();
-                    if ("-".equals(csvFilePath)) {
-                        System.out.println("Usando diretório padrão...");
-                        csvFilePath = "./dataset/TABELA-FINAL.csv";
+                    while (true) {
+                        System.out.println("Escolha uma opção:");
+                        System.out.println("0. Criar registros a partir de um arquivo CSV");
+                        System.out.println("1. Criar um registro manualmente");
+                        System.out.println("2. Voltar");
+                        System.out.print("Digite sua escolha: ");
+                        String subChoice = reader.readLine();
+
+                        switch (subChoice) {
+                            case "0":
+                                System.out.print("Digite o caminho do arquivo CSV (ou digite \"-\" para usar o diretório padrão): ");
+                                csvFilePath = reader.readLine();
+                                if ("-".equals(csvFilePath)) {
+                                    System.out.println("Usando diretório padrão...");
+                                    csvFilePath = "./dataset/TABELA-FINAL.csv";
+                                }
+                                createDatabaseFromCSV(csvFilePath, binaryFilePath);
+                                break;
+                            case "1":
+                                System.out.print("Digite a marca do carro: ");
+                                String carMake = reader.readLine();
+                                System.out.print("Digite o modelo do carro: ");
+                                String carModel = reader.readLine();
+                                System.out.print("Digite a potência e torque do carro separados por virgula: ");
+                                String[] hpTorque = reader.readLine().split(",");
+                                System.out.print("Digite a data de lançamento do carro: ");
+                                String date = reader.readLine();
+                                System.out.print("Digite o tempo de 0-60 MPH do carro: ");
+                                float zeroToSixty = Float.parseFloat(reader.readLine());
+                                System.out.print("Digite o preço do carro: ");
+                                float price = Float.parseFloat(reader.readLine());
+                                int id = idCounter++;
+                                Carro carro = new Carro(id, carMake, carModel, hpTorque, date, zeroToSixty, price);
+                                CsvToBinaryConverter.create(binaryFilePath, carro);
+                                System.out.println("Registro criado com sucesso! O id do registro é " + id);
+                                break;
+                            case "2":
+                                break;
+                            default:
+                                System.out.println("Opção inválida. Tente novamente.");
+                        }
+                        if ("2".equals(subChoice)) {
+                            break;
+                        }
+                        break;
                     }
-                    createDatabaseFromCSV(csvFilePath, binaryFilePath);
                     break;
                 case "1":
                     System.out.print("Lendo todos os registros... ");
@@ -41,12 +80,16 @@ public class Aplicacao {
                     break;
                 case "2":
                     System.out.print("Digite o ID do registro que deseja ler: ");
-                    String idRead = reader.readLine();
+                    int idRead = Integer.parseInt(reader.readLine());
                     CsvToBinaryConverter.readById(binaryFilePath, idRead);
                     break;
                 case "3":
                     System.out.print("Digite o ID do carro que deseja atualizar: ");
-                    String idAtualiza = reader.readLine();
+                    int idAtualiza = Integer.parseInt(reader.readLine());
+                    boolean carroExiste = CsvToBinaryConverter.readById(binaryFilePath, idAtualiza);
+                    if (!carroExiste) {
+                        break;
+                    }
 
                     // Cria um objeto Carro para representar os dados atualizados
                     Carro carroAtualizado = new Carro();
@@ -71,8 +114,9 @@ public class Aplicacao {
                     // Solicita a atualização do campo 'Horsepower_Torque'
                     System.out.print("Atualizar 'Horsepower_Torque' (Digite '-' para manter inalterado): ");
                     String hpTorque = reader.readLine();
+                    String[] hpTorqueArray = hpTorque.split(",");
                     if (!"-".equals(hpTorque)) {
-                        carroAtualizado.setHp_Torque(hpTorque);
+                        carroAtualizado.setHp_Torque(hpTorqueArray);
                         contadorCamposAtualizados++;
                     }
                     // Solicita a atualização da data
@@ -108,7 +152,7 @@ public class Aplicacao {
                     break;
                 case "4":
                     System.out.print("Digite o ID do carro que deseja deletar: ");
-                    String idDelete = reader.readLine();
+                    int idDelete = Integer.parseInt(reader.readLine());
 
                     // Chama o método de deleção
                     CsvToBinaryConverter.deleteById(binaryFilePath, idDelete);
@@ -126,19 +170,29 @@ public class Aplicacao {
     private static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath) throws IOException {
         List<String> lines = Files.readAllLines(Paths.get(csvFilePath));
         int contadorRegistros = 0;
+    
         for (String line : lines) {
-            // Supondo que a primeira linha seja o cabeçalho
-            if (lines.indexOf(line) == 0)
-                continue;
-
+            if (lines.indexOf(line) == 0) continue; // Ignora o cabeçalho
+        
             String[] data = line.split(";");
-            Carro carro = new Carro(data[0], data[1], data[2], data[3], data[4], Float.parseFloat(data[5]),
-                    Float.parseFloat(data[6].replaceAll("\\,", "")));
+            String[] hpTorqueArray = data[3].split(","); // Divide a string hp_Torque em um array
+            
+            Carro carro = new Carro(
+                Integer.parseInt(data[0]), // ID
+                data[1], // Car Make
+                data[2], // Car Model
+                hpTorqueArray, // hpTorque como um array (dividido pela vírgula)
+                data[4], // Data
+                Float.parseFloat(data[5]), // 0-60 MPH Time
+                Float.parseFloat(data[6].replaceAll("\\,", "")) // Preço
+            );
+        
             CsvToBinaryConverter.create(binaryFilePath, carro);
-
             contadorRegistros++;
         }
+        
+    
         System.out.println("Total de registros criados: " + contadorRegistros);
-
     }
+    
 }
