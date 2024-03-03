@@ -224,9 +224,9 @@ public class CsvToBinaryConverter {
 
     // Update para lidar com atualizações parciais
     private static void updateCarFields(Carro carro, Carro carroAtualizado) {
-        if (carroAtualizado.getId() > -1) {
-            carro.setId(carroAtualizado.getId());
-        }
+        // if (carroAtualizado.getId() > -1) {
+        //     carro.setId(carroAtualizado.getId());
+        // }
         if (carroAtualizado.getCarMake() != null) {
             carro.setCarMake(carroAtualizado.getCarMake());
         }
