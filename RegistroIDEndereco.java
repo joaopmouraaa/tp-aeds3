@@ -3,9 +3,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class RegistroIDEndereco implements RegistroHashExtensivel<RegistroIDEndereco> {
-    private static final int ID_SIZE = 10; // tamanho fixo para id
-    private int id;
-    private int endereco;
+    private static final int ID_SIZE = 4; // tamanho fixo para id
+    public int id;
+    public int endereco;
 
     public RegistroIDEndereco() {
     }
@@ -42,6 +42,8 @@ public class RegistroIDEndereco implements RegistroHashExtensivel<RegistroIDEnde
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeInt(id);
         dos.writeInt(endereco);
+        // imprimir a sequênciad e bytes na tela
+        System.out.println("Sequência de bytes do registro de id "+id+" e endereço "+endereco+" "+Arrays.toString(baos.toByteArray()));
         return baos.toByteArray();
     }
 
@@ -55,5 +57,14 @@ public class RegistroIDEndereco implements RegistroHashExtensivel<RegistroIDEnde
     @Override
     public short size() {
         return (short) (ID_SIZE + 4); // ID_SIZE bytes para o id + 4 bytes para o endereco
+    }
+
+    // toString
+    @Override
+    public String toString() {
+        return "RegistroIDEndereco{" +
+                "id=" + id +
+                ", endereco=" + endereco +
+                '}';
     }
 }

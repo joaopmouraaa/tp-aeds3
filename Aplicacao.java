@@ -139,7 +139,7 @@ public class Aplicacao {
                     CRUD.readAll(binaryFilePath);
                     break;
                 case '2':
-                    System.out.print("Digite o ID do registro que deseja ler (ou palavra no caso de lista invertida): ");
+                    System.out.print("Digite o ID do registro que deseja ler: ");
                     String idRead = reader.readLine();
                     int posicao = -1;
                     if ("1".equals(escolha)) {
@@ -153,9 +153,11 @@ public class Aplicacao {
                         }
                     } else if ("3".equals(escolha)) {
                         try {
+                            System.out.println("Lendo da lista invertida...");
                             int[] array = invertedList.read(idRead);
+                            System.out.println("Registro encontrado na lista invertida. ");
                             for (int i = 0; i < array.length; i++) {
-                                System.out.println("Registro encontrado na posição " + array[i] + ".");
+                                System.out.println("Endereço do registro: " + array[i] + ".");
                             }
                             if (array.length > 0) {
                                 posicao = array[0];
@@ -167,6 +169,7 @@ public class Aplicacao {
                     if (posicao == -1) {
                         System.out.println("Registro não encontrado.");
                     } else {
+                        System.out.println("Buscando no arquivo de registros, na posição " + posicao + ".");
                         int IntIdRead = Integer.parseInt(idRead);
                         CRUD.readByPosicao(binaryFilePath, posicao, IntIdRead);
                     }
@@ -269,15 +272,16 @@ public class Aplicacao {
                                 System.out.println("Erro ao deletar o registro: " + e.getMessage());
                             }
                         } else if ("3".equals(escolha)) {
-                            System.out.println("Digite a palavra que deseja deletar: ");
-                            String palavra = reader.readLine();
+                            // System.out.println("Digite a palavra que deseja deletar: ");
+                            // String palavra = reader.readLine();
+                            String palavra = ""+idDelete;
                             try {
                                 deletouIndice = invertedList.delete(palavra, idDelete);
                             } catch (Exception e) {
                                 System.out.println("Erro ao deletar o registro: " + e.getMessage());
                             }
                         }
-                        if (deletouIndice) {
+                        if (deletouIndice || "3".equals(escolha)) {
                             System.out.println("Registro deletado com sucesso.");
                         } else {
                             System.out.println("Registro deletado, porém houve erro para deletá-lo do índice.");
@@ -349,13 +353,14 @@ public class Aplicacao {
                 insertIntoHash(carro, resultado, hash, binaryFilePath);
                 CRUD.incrementarContadorDeRegistros(binaryFilePath);
                 temp++;
-                if (temp == 22) {
-                    break;
-                }
+                // if (temp == 6) {
+                //     break;
+                // }
                 // System.out.println(". Registro criado com o id " + carro.getId() + ".");
             }
         }
         // System.out.println("Total de registros criados: " + CRUD.getNumeroRegistros(binaryFilePath) + ".");
+        hash.print();
     }
 
     private static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath, ListaInvertida invertedList) throws IOException {
@@ -412,6 +417,7 @@ public class Aplicacao {
         // Criando um novo registro
         RegistroIDEndereco registro = new RegistroIDEndereco(Integer.parseInt(idString), posicao);
         System.out.println("Inserindo registro: " + registro.getId() + ", " + registro.getEndereco()+" ");
+        registro.toString();
         // Inserir na árvore
         try {
             hash.create(registro);
@@ -428,6 +434,7 @@ public class Aplicacao {
         // Inserir na árvore
         try {
             invertedList.create(idString, posicao);
+            System.out.print("\nInserido na lista invertida: " + idString + ", " + posicao+" ");
         } catch (Exception e) {
             System.out.println("Erro ao inserir na lista invertida: " + e.getMessage());
         }
