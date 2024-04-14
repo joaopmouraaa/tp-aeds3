@@ -4,28 +4,67 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.lang.reflect.Constructor;
 
-public class Aplicacao {
-    private static int idCounter = 0;
+public class Aplicacao {    
     public static void main(String[] args) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        String binaryFilePath = "./dataset/binario.bin";
-        String csvFilePath = "./dataset/TABELA-FINAL.csv";
-
-        while (true) {
+        String binaryFilePath = "./binario.bin";
+        String csvFilePath = "./TABELA-FINAL.csv";
+        String bTreeFilePath = "./bTree.bin";
+        String directoryFilePath = "./directory.bin";
+        String bucketFilePath = "./bucket.bin";
+        String dictionaryFilePath = "./dictionary.bin";
+        String blocksFilePath = "./blocks.bin";
+        CRUD.inicializarContadorDeRegistros(binaryFilePath);
+        System.out.println("Contador de registros inicializado. Testando: " + CRUD.getNumeroRegistros(binaryFilePath) + " registros. Testando novamente: ");
+        int contadorRegistros = CRUD.getNumeroRegistros(binaryFilePath);
+        System.out.println(contadorRegistros + " registros.");
+        System.out.println("Quer trabalhar com Árvore B+, Hash Extensível ou Lista Invertida?");
+        System.out.println("1. Árvore B+");
+        System.out.println("2. Hash Extensível");
+        System.out.println("3. Lista Invertida");
+        System.out.print("Digite sua escolha: ");
+        String escolha = reader.readLine();
+        BPTree bTree = null;
+        HashExtensivel<RegistroIDEndereco> hash = null;
+        try {
+            Constructor<RegistroIDEndereco> constructor = RegistroIDEndereco.class.getConstructor();
+            hash = new HashExtensivel<RegistroIDEndereco>(constructor, 20, directoryFilePath, bucketFilePath);
+        } catch (Exception e) {
+            System.out.println("Erro ao criar o Hash Extensível: " + e.getMessage());
+            return;
+        }
+        ListaInvertida invertedList = null;
+        if ("1".equals(escolha)) {
+            System.out.println("Trabalhando com Árvore B+");
+            bTree = new BPTree(8, bTreeFilePath);
+        } else if ("2".equals(escolha)) {
+            System.out.println("Trabalhando com Hash Extensível");
+        } else if ("3".equals(escolha)) {
+            System.out.println("Trabalhando com Lista Invertida");
+            try {
+                invertedList = new ListaInvertida(20, dictionaryFilePath, blocksFilePath);
+            } catch (Exception e) {
+                System.out.println("Erro ao criar a Lista Invertida: " + e.getMessage());
+            }
+        } else {
+            System.out.println("Opção inválida. Fechando o programa...");
+            return;
+        }
+        char choice = '0';
+        while (choice != '5') {
             System.out.println("Escolha uma opção:");
             System.out.println("0. Criar novo registro");
             System.out.println("1. Ler todos os registros");
             System.out.println("2. Ler registro por ID");
             System.out.println("3. Atualizar registro por ID");
             System.out.println("4. Deletar registro por ID");
-            System.out.println("5. Sair");
-
+            System.out.println("5. Salvar e sair");
             System.out.print("Digite sua escolha: ");
-            String choice = reader.readLine();
-
+            choice = reader.readLine().charAt(0);
             switch (choice) {
-                case "0":
+                case '0':
                     while (true) {
                         System.out.println("Escolha uma opção:");
                         System.out.println("0. Criar registros a partir de um arquivo CSV");
@@ -33,16 +72,26 @@ public class Aplicacao {
                         System.out.println("2. Voltar");
                         System.out.print("Digite sua escolha: ");
                         String subChoice = reader.readLine();
-
                         switch (subChoice) {
                             case "0":
                                 System.out.print("Digite o caminho do arquivo CSV (ou digite \"-\" para usar o diretório padrão): ");
                                 csvFilePath = reader.readLine();
                                 if ("-".equals(csvFilePath)) {
                                     System.out.println("Usando diretório padrão...");
-                                    csvFilePath = "./dataset/TABELA-FINAL.csv";
+                                    csvFilePath = "./TABELA-FINAL.csv";
                                 }
-                                createDatabaseFromCSV(csvFilePath, binaryFilePath);
+                                if ("1".equals(escolha)) {
+                                    System.out.println("Usando Árvore B+...");
+                                    createDatabaseFromCSV(csvFilePath, binaryFilePath, bTree);
+                                } else if ("2".equals(escolha)) {
+                                    System.out.println("Usando Hash Extensível...");
+                                    createDatabaseFromCSV(csvFilePath, binaryFilePath, hash);
+                                } else if ("3".equals(escolha)) {
+                                    System.out.println("Usando Lista Invertida...");
+                                    createDatabaseFromCSV(csvFilePath, binaryFilePath, invertedList);
+                                } else {
+                                    System.out.println("Opção inválida. Tente novamente.");
+                                }
                                 break;
                             case "1":
                                 System.out.print("Digite a marca do carro: ");
@@ -57,10 +106,22 @@ public class Aplicacao {
                                 float zeroToSixty = Float.parseFloat(reader.readLine());
                                 System.out.print("Digite o preço do carro: ");
                                 float price = Float.parseFloat(reader.readLine());
-                                int id = idCounter++;
+                                int id = CRUD.getNumeroRegistros(binaryFilePath); // ID
                                 Carro carro = new Carro(id, carMake, carModel, hpTorque, date, zeroToSixty, price);
-                                CsvToBinaryConverter.create(binaryFilePath, carro);
-                                System.out.println("Registro criado com sucesso! O id do registro é " + id);
+                                System.out.println(carro.toString());
+                                myStruct resultado = CRUD.create(binaryFilePath, carro);
+                                if (resultado.sucesso) {
+                                    // implementar inserção na árvore com ID e endereço do carro no arquivo binário
+                                    if ("1".equals(escolha)) {
+                                        insertIntoBTree(carro, resultado, bTree, binaryFilePath);
+                                    } else if ("2".equals(escolha)) {
+                                        insertIntoHash(carro, resultado, hash, binaryFilePath);
+                                    } else if ("3".equals(escolha)) {
+                                        insertIntoInvertedList(carro, resultado, invertedList, binaryFilePath);
+                                    }
+                                    CRUD.incrementarContadorDeRegistros(binaryFilePath);
+                                    System.out.println("Registro criado com o id " + carro.getId() + ".");
+                                }
                                 break;
                             case "2":
                                 break;
@@ -73,30 +134,54 @@ public class Aplicacao {
                         break;
                     }
                     break;
-                case "1":
+                case '1':
                     System.out.print("Lendo todos os registros... ");
-
-                    CsvToBinaryConverter.readAll(binaryFilePath);
+                    CRUD.readAll(binaryFilePath);
                     break;
-                case "2":
-                    System.out.print("Digite o ID do registro que deseja ler: ");
-                    int idRead = Integer.parseInt(reader.readLine());
-                    CsvToBinaryConverter.readById(binaryFilePath, idRead);
+                case '2':
+                    System.out.print("Digite o ID do registro que deseja ler (ou palavra no caso de lista invertida): ");
+                    String idRead = reader.readLine();
+                    int posicao = -1;
+                    if ("1".equals(escolha)) {
+                        posicao = bTree.read(idRead);
+                    } else if ("2".equals(escolha)) {
+                        int chave = Integer.parseInt(idRead);
+                        try {
+                            posicao = hash.read(chave).getEndereco();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else if ("3".equals(escolha)) {
+                        try {
+                            int[] array = invertedList.read(idRead);
+                            for (int i = 0; i < array.length; i++) {
+                                System.out.println("Registro encontrado na posição " + array[i] + ".");
+                            }
+                            if (array.length > 0) {
+                                posicao = array[0];
+                            }
+                        } catch (Exception e) {
+                            System.out.println("Registro não encontrado.");
+                        }
+                    }
+                    if (posicao == -1) {
+                        System.out.println("Registro não encontrado.");
+                    } else {
+                        int IntIdRead = Integer.parseInt(idRead);
+                        CRUD.readByPosicao(binaryFilePath, posicao, IntIdRead);
+                    }
                     break;
-                case "3":
+                case '3':
                     System.out.print("Digite o ID do carro que deseja atualizar: ");
                     int idAtualiza = Integer.parseInt(reader.readLine());
-                    boolean carroExiste = CsvToBinaryConverter.readById(binaryFilePath, idAtualiza);
+                    boolean carroExiste = CRUD.readById(binaryFilePath, idAtualiza);
                     if (!carroExiste) {
                         break;
                     }
-
                     // Cria um objeto Carro para representar os dados atualizados
                     Carro carroAtualizado = new Carro();
                     // carroAtualizado.setId(idAtualiza); // ID não é alterado
-
                     int contadorCamposAtualizados = 0;
-
                     // Pergunta para cada campo se o usuário deseja atualizar
                     System.out.print("Atualizar 'Car Make' (Digite '-' para manter inalterado): ");
                     String carMake = reader.readLine();
@@ -142,43 +227,83 @@ public class Aplicacao {
                         carroAtualizado.setPrice(price);
                         contadorCamposAtualizados++;
                     }
-
                     // Chama o método de atualização
                     if (contadorCamposAtualizados == 0) {
                         System.out.println("Nenhum campo foi atualizado.");
                         break;
                     }
-                    CsvToBinaryConverter.update(idAtualiza, carroAtualizado, binaryFilePath);
+                    int novaPos = CRUD.update(idAtualiza, carroAtualizado, binaryFilePath);
+                    if (novaPos == -1) {
+                        System.out.println("Erro ao atualizar o registro.");
+                    } else {
+                        if ("1".equals(escolha)) {
+                            bTree.update(Integer.toString(idAtualiza), novaPos);
+                        } else if ("2".equals(escolha)) {
+                            RegistroIDEndereco registro = new RegistroIDEndereco(idAtualiza, novaPos);
+                            try {
+                                hash.update(registro);
+                            } catch (Exception e) {
+                                System.out.println("Erro ao atualizar o registro: " + e.getMessage());
+                            }
+                        } else if ("3".equals(escolha)) {
+                            System.out.println("Lista invertida não suporta atualização.");
+                        }
+                        if (!"3".equals(escolha)) {
+                            System.out.println("Registro com id "+idAtualiza+" atualizado com sucesso, agora na posição " + novaPos + ".");
+                        }
+                    }
                     break;
-                case "4":
+                case '4':
                     System.out.print("Digite o ID do carro que deseja deletar: ");
                     int idDelete = Integer.parseInt(reader.readLine());
-
                     // Chama o método de deleção
-                    CsvToBinaryConverter.deleteById(binaryFilePath, idDelete);
+                    boolean deletou = CRUD.deleteById(binaryFilePath, idDelete);
+                    if (deletou) {
+                        boolean deletouIndice = false;
+                        if ("1".equals(escolha)) {
+                            deletouIndice = bTree.delete(Integer.toString(idDelete));
+                        } else if ("2".equals(escolha)) {
+                            try {
+                                deletouIndice = hash.delete(idDelete);
+                            } catch (Exception e) {
+                                System.out.println("Erro ao deletar o registro: " + e.getMessage());
+                            }
+                        } else if ("3".equals(escolha)) {
+                            System.out.println("Digite a palavra que deseja deletar: ");
+                            String palavra = reader.readLine();
+                            try {
+                                deletouIndice = invertedList.delete(palavra, idDelete);
+                            } catch (Exception e) {
+                                System.out.println("Erro ao deletar o registro: " + e.getMessage());
+                            }
+                        }
+                        if (deletouIndice) {
+                            System.out.println("Registro deletado com sucesso.");
+                        } else {
+                            System.out.println("Registro deletado, porém houve erro para deletá-lo do índice.");
+                        }
+                    } else {
+                        System.out.println("Registro não foi deletado pois não foi encontrado.");
+                    }
                     break;
-
-                case "5":
-                    System.out.println("Saindo...");
-                    return;
+                case '5':
+                    System.out.println("Salvando e saindo...");
+                    break;
                 default:
                     System.out.println("Opção inválida. Tente novamente.");
             }
         }
     }
 
-    private static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath) throws IOException {
+    private static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath, BPTree bTree) throws IOException {
         List<String> lines = Files.readAllLines(Paths.get(csvFilePath));
-        int contadorRegistros = 0;
-    
         for (String line : lines) {
             if (lines.indexOf(line) == 0) continue; // Ignora o cabeçalho
-        
             String[] data = line.split(";");
             String[] hpTorqueArray = data[3].split(","); // Divide a string hp_Torque em um array
             
             Carro carro = new Carro(
-                Integer.parseInt(data[0]), // ID
+                CRUD.getNumeroRegistros(binaryFilePath), // ID
                 data[1], // Car Make
                 data[2], // Car Model
                 hpTorqueArray, // hpTorque como um array (dividido pela vírgula)
@@ -186,14 +311,121 @@ public class Aplicacao {
                 Float.parseFloat(data[5]), // 0-60 MPH Time
                 Float.parseFloat(data[6].replaceAll("\\,", "")) // Preço
             );
-        
-            CsvToBinaryConverter.create(binaryFilePath, carro);
-            contadorRegistros++;
-            idCounter++;
+            // System.out.println(carro.toString());
+            myStruct resultado = CRUD.create(binaryFilePath, carro);
+            if (resultado.sucesso) {
+                // implementar inserção na árvore com ID e endereço do carro no arquivo binário
+                // System.out.print("Inserindo na árvore o carro id " + carro.getId() + " com posição " + resultado.posicao);
+                insertIntoBTree(carro, resultado, bTree, binaryFilePath);                
+                CRUD.incrementarContadorDeRegistros(binaryFilePath);
+                // System.out.println(". Registro criado com o id " + carro.getId() + ".");
+            }
         }
-        
-    
-        System.out.println("Total de registros criados: " + contadorRegistros);
+        // System.out.println("Total de registros criados: " + CRUD.getNumeroRegistros(binaryFilePath) + ".");
     }
-    
+
+    private static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath, HashExtensivel<RegistroIDEndereco> hash) throws IOException {
+        List<String> lines = Files.readAllLines(Paths.get(csvFilePath));
+        for (String line : lines) {
+            if (lines.indexOf(line) == 0) continue; // Ignora o cabeçalho
+            String[] data = line.split(";");
+            String[] hpTorqueArray = data[3].split(","); // Divide a string hp_Torque em um array
+            
+            Carro carro = new Carro(
+                CRUD.getNumeroRegistros(binaryFilePath), // ID
+                data[1], // Car Make
+                data[2], // Car Model
+                hpTorqueArray, // hpTorque como um array (dividido pela vírgula)
+                data[4], // Data
+                Float.parseFloat(data[5]), // 0-60 MPH Time
+                Float.parseFloat(data[6].replaceAll("\\,", "")) // Preço
+            );
+            // System.out.println(carro.toString());
+            myStruct resultado = CRUD.create(binaryFilePath, carro);
+            if (resultado.sucesso) {
+                // implementar inserção na árvore com ID e endereço do carro no arquivo binário
+                // System.out.print("Inserindo na árvore o carro id " + carro.getId() + " com posição " + resultado.posicao);
+                insertIntoHash(carro, resultado, hash, binaryFilePath);
+                CRUD.incrementarContadorDeRegistros(binaryFilePath);
+                // System.out.println(". Registro criado com o id " + carro.getId() + ".");
+            }
+        }
+        // System.out.println("Total de registros criados: " + CRUD.getNumeroRegistros(binaryFilePath) + ".");
+    }
+
+    private static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath, ListaInvertida invertedList) throws IOException {
+        List<String> lines = Files.readAllLines(Paths.get(csvFilePath));
+        for (String line : lines) {
+            if (lines.indexOf(line) == 0) continue; // Ignora o cabeçalho
+            String[] data = line.split(";");
+            String[] hpTorqueArray = data[3].split(","); // Divide a string hp_Torque em um array
+            
+            Carro carro = new Carro(
+                CRUD.getNumeroRegistros(binaryFilePath), // ID
+                data[1], // Car Make
+                data[2], // Car Model
+                hpTorqueArray, // hpTorque como um array (dividido pela vírgula)
+                data[4], // Data
+                Float.parseFloat(data[5]), // 0-60 MPH Time
+                Float.parseFloat(data[6].replaceAll("\\,", "")) // Preço
+            );
+            // System.out.println(carro.toString());
+            myStruct resultado = CRUD.create(binaryFilePath, carro);
+            if (resultado.sucesso) {
+                // implementar inserção na árvore com ID e endereço do carro no arquivo binário
+                // System.out.print("Inserindo na árvore o carro id " + carro.getId() + " com posição " + resultado.posicao);
+                insertIntoInvertedList(carro, resultado, invertedList, binaryFilePath);                
+                CRUD.incrementarContadorDeRegistros(binaryFilePath);
+                // System.out.println(". Registro criado com o id " + carro.getId() + ".");
+            }
+        }
+        // System.out.println("Total de registros criados: " + CRUD.getNumeroRegistros(binaryFilePath) + ".");
+    }
+
+    private static void insertIntoBTree(Carro carro, myStruct resultado, BPTree bTree, String binaryFilePath) {
+        // Converter o ID para String
+        String idString = Integer.toString(carro.getId());
+        // Converter a posição para int
+        int posicao = (int) resultado.posicao;
+        // Inserir na árvore
+        try {
+            bTree.create(idString, posicao);
+        } catch (Exception e) {
+            System.out.println("Erro ao inserir na árvore: " + e.getMessage());
+        }
+    }
+
+    private static void insertIntoHash(Carro carro, myStruct resultado, HashExtensivel<RegistroIDEndereco> hash, String binaryFilePath) {
+        if (hash == null) {
+            System.out.println("Hash é nulo.");
+            return;
+        }
+        // Converter o ID para String
+        String idString = Integer.toString(carro.getId());
+        // Converter a posição para int
+        int posicao = (int) resultado.posicao;
+        // Criando um novo registro
+        RegistroIDEndereco registro = new RegistroIDEndereco(Integer.parseInt(idString), posicao);
+        System.out.println("Registro criado: " + registro.getId() + ", " + registro.getEndereco()+" ");
+        // Inserir na árvore
+        try {
+            hash.create(registro);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void insertIntoInvertedList(Carro carro, myStruct resultado, ListaInvertida invertedList, String binaryFilePath) {
+        // Converter o ID para String
+        String idString = Integer.toString(carro.getId());
+        // Converter a posição para int
+        int posicao = (int) resultado.posicao;
+        // Inserir na árvore
+        try {
+            invertedList.create(idString, posicao);
+        } catch (Exception e) {
+            System.out.println("Erro ao inserir na lista invertida: " + e.getMessage());
+        }
+    }
+
 }
