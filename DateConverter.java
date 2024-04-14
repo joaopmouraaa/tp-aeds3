@@ -22,12 +22,5 @@ public class DateConverter {
         Date date = new Date(dateInMilliseconds);
         return sdf.format(date);
     }
-
-    /*
-     * public static void main(String[] args) {
-     * String dateString = "01/01/2022"; // Exemplo de data
-     * long millis = convertDateToMillis(dateString);
-     * System.out.println("Data em milissegundos: " + millis);
-     * }
-     */
+    
 }

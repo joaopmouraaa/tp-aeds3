@@ -1,5 +1,4 @@
 import java.io.Serializable;
-//import java.util.Date;
 import java.util.Arrays;
 
 public class Carro implements Serializable {
