@@ -1,4 +1,3 @@
-
 /*********
  * LISTA INVERTIDA
  * String chave, int dado

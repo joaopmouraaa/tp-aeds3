@@ -30,7 +30,7 @@ public class BPTree {
 
     private int  order;                 // Número máximo de sons que uma página pode conter
     private int  maxElements;          // Variável igual a order - 1 para facilitar a clareza do código
-    private int  maxSons;             // Variável igual a order para facilitar a clareza do código
+    // private int  maxSons;             // Variável igual a order para facilitar a clareza do código
     private RandomAccessFile file;   // file em que a árvore será armazenada
     private String fileName;
     
@@ -43,7 +43,7 @@ public class BPTree {
     
     // Esta classe representa uma página da árvore (folha ou não folha). 
     private class Page {
-        protected int      order;                 // Número máximo de sons que uma página pode ter
+        // protected int      order;                 // Número máximo de sons que uma página pode ter
         protected int      maxElements;          // Variável igual a order - 1 para facilitar a clareza do código
         protected int      maxSons;             // Variável igual a order  para facilitar a clareza do código
         protected int      n;                     // Número de elementos presentes na página
@@ -169,7 +169,7 @@ public class BPTree {
         // Inicializa os atributos da árvore
         order = o;
         maxElements = o-1;
-        maxSons = o;
+        // maxSons = o;
         fileName = na;
         
         // Abre (ou cria) o file, escrevendo uma root empty, se necessário.
