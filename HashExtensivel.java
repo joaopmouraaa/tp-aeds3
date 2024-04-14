@@ -267,7 +267,6 @@ public class HashExtensivel<T extends RegistroHashExtensivel<T>> {
     }
 
     public HashExtensivel(Constructor<T> ct, int n, String nd, String nc) throws Exception {
-        System.out.println("Criando tabela hash extensível com " + n + " elementos por cesto, diretório " + nd + " e cestos " + nc + ".");
         construtor = ct;
         quantidadeDadosPorCesto = n;
         nomeArquivoDiretorio = nd;
