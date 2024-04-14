@@ -326,6 +326,7 @@ public class Aplicacao {
 
     private static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath, HashExtensivel<RegistroIDEndereco> hash) throws IOException {
         List<String> lines = Files.readAllLines(Paths.get(csvFilePath));
+        int temp = 0;
         for (String line : lines) {
             if (lines.indexOf(line) == 0) continue; // Ignora o cabeçalho
             String[] data = line.split(";");
@@ -347,6 +348,10 @@ public class Aplicacao {
                 // System.out.print("Inserindo na árvore o carro id " + carro.getId() + " com posição " + resultado.posicao);
                 insertIntoHash(carro, resultado, hash, binaryFilePath);
                 CRUD.incrementarContadorDeRegistros(binaryFilePath);
+                temp++;
+                if (temp == 22) {
+                    break;
+                }
                 // System.out.println(". Registro criado com o id " + carro.getId() + ".");
             }
         }
@@ -406,7 +411,7 @@ public class Aplicacao {
         int posicao = (int) resultado.posicao;
         // Criando um novo registro
         RegistroIDEndereco registro = new RegistroIDEndereco(Integer.parseInt(idString), posicao);
-        System.out.println("Registro criado: " + registro.getId() + ", " + registro.getEndereco()+" ");
+        System.out.println("Inserindo registro: " + registro.getId() + ", " + registro.getEndereco()+" ");
         // Inserir na árvore
         try {
             hash.create(registro);
