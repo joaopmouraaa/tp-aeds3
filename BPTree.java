@@ -197,8 +197,12 @@ public class BPTree {
         root = file.readLong();
         
         // Executa a busca recursiva
-        if(root!=-1)
-            return read1(c,root);
+        System.out.println("Buscando por "+c);
+        if(root!=-1) {
+            int resultado = read1(c,root);
+            System.out.println("Resultado: "+resultado);
+            return resultado;
+        }
         else
             return -1;
     }
@@ -238,10 +242,13 @@ public class BPTree {
         }
         
         // Terceiro passo - ainda não é uma folha, continua a busca recursiva pela árvore
-        if(i==pa.n || key.compareTo(pa.keys[i])<0)
+        if(i==pa.n || key.compareTo(pa.keys[i])<0) {
+            System.out.println("Caminhando para a esquerda de "+pa.keys[i]);
             return read1(key, pa.sons[i]);
-        else
+        } else {
+            System.out.println("Caminhando para a direita de "+pa.keys[i]);
             return read1(key, pa.sons[i+1]);
+        }
     }
         
     // Atualiza recursivamente um valor a partir da sua key. Este metodo invoca 

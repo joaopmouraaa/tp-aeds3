@@ -3,7 +3,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.text.ParseException;
 
-public class DateConverter {
+public class DateConverter_TP2 {
     public static long convertDateToMillis(String dateString) {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         try {
