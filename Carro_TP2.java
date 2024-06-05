@@ -25,21 +25,7 @@ public class Carro implements Serializable {
         this.carModel = carModel;
         this.hp_Torque = hpTorque;
         this.date = dateString;
-        this.dateInMilliseconds = Aplicacao.convertDateToMillis(dateString);
-        this.zeroToSixty = zeroToSixty;
-        this.price = price;
-    }
-
-    public Carro(int id, String carMake, String carModel, String hpTorque1, String hpTorque2, String dateInMilliseconds, float zeroToSixty,
-            float price) {
-        this.id = id;
-        this.carMake = carMake;
-        this.carModel = carModel;
-        this.hp_Torque = new String[2];
-        this.hp_Torque[0] = hpTorque1;
-        this.hp_Torque[1] = hpTorque2;
-        this.date = Aplicacao.convertMillisToDate(Long.parseLong(dateInMilliseconds));
-        this.dateInMilliseconds = Long.parseLong(dateInMilliseconds);
+        this.dateInMilliseconds = DateConverter.convertDateToMillis(dateString);
         this.zeroToSixty = zeroToSixty;
         this.price = price;
     }
@@ -95,7 +81,7 @@ public class Carro implements Serializable {
 
     public void setDate(String date) {
         this.date = date;
-        this.dateInMilliseconds = Aplicacao.convertDateToMillis(date);
+        this.dateInMilliseconds = DateConverter.convertDateToMillis(date);
     }
 
     public void setDateInMilliseconds(long dateInMilliseconds) {
@@ -125,7 +111,6 @@ public class Carro implements Serializable {
                 '}';
     }
 
-    public String toString2() {
-        return id + "#" + carMake + "#" + carModel + "#" + hp_Torque[0] + "#" + hp_Torque[1] + "#" + date + "#" + dateInMilliseconds + "#" + zeroToSixty + "#" + price + "|";
-    }
+    // Métodos adicionais para serialização e desserialização podem ser adicionados
+    // ...
 }

@@ -34,7 +34,7 @@ public class CRUD {
             numberOfRecords = raf.readInt();
             raf.close();
         } catch (IOException e) {
-            System.out.print("Não há registros no arquivo ou o arquivo não existe. ");
+            System.out.println("Não há registros ou o arquivo não existe.");
         }
         return numberOfRecords;
     }
@@ -52,41 +52,6 @@ public class CRUD {
             return -1;
         }
     }
-    // Create All
-    public static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath) {
-        try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
-            String line;
-            inicializarContadorDeRegistros(binaryFilePath);
-            br.readLine(); // Pula a primeira linha (cabeçalho)
-            while ((line = br.readLine()) != null) {
-                String[] values = line.split(";");
-                int id = Integer.parseInt(values[0]);
-                String carMake = values[1];
-                String carModel = values[2];
-                String[] hpTorque = new String[2];
-                hpTorque[0] = values[3].split(",")[0];
-                hpTorque[1] = values[3].split(",")[1].substring(0, values[3].split(",")[1].length());
-                String date = values[4];
-                float zeroToSixty = Float.parseFloat(values[5]);
-                String priceTemp = values[6];
-                priceTemp = priceTemp.replace(",", "");
-                float price = Float.parseFloat(priceTemp);
-                Carro carro = new Carro(id, carMake, carModel, hpTorque, date, zeroToSixty, price);
-                if (create(binaryFilePath, carro).sucesso) {
-                    try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "rw")) {
-                        raf.seek(0);
-                        int numberOfRecords = raf.readInt();
-                        raf.seek(0);
-                        raf.writeInt(numberOfRecords + 1);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
     // Create
     public static myStruct create(String binaryFilePath, Carro registroCarro) throws IOException {
@@ -94,20 +59,20 @@ public class CRUD {
             boolean registroExiste = false;
             raf.seek(4); // Pula o contador de registros
             while (raf.getFilePointer() < raf.length()) {
-                byte lapide = raf.readByte();
-                int tamanhoRegistro = raf.readInt();
-                if (lapide != 1) {
-                    byte[] registroAtualBytes = new byte[tamanhoRegistro];
-                    raf.readFully(registroAtualBytes);
-                    Carro carroExistente = deserializeCarro(registroAtualBytes);
-                    if (carroExistente.getId() == registroCarro.getId()) {
-                        registroExiste = true;
-                        break;
+                    byte lapide = raf.readByte();
+                    int tamanhoRegistro = raf.readInt();
+                    if (lapide != 1) {
+                        byte[] registroAtualBytes = new byte[tamanhoRegistro];
+                        raf.readFully(registroAtualBytes);
+                        Carro carroExistente = deserializeCarro(registroAtualBytes);
+                        if (carroExistente.getId() == registroCarro.getId()) {
+                            registroExiste = true;
+                            break;
+                        }
+                    } else {
+                        raf.skipBytes(tamanhoRegistro);
                     }
-                } else {
-                    raf.skipBytes(tamanhoRegistro);
                 }
-            }
             myStruct retorno = new myStruct();
             if (!registroExiste) {
                 raf.seek(raf.length()); // Posiciona o ponteiro no final do arquivo
@@ -157,41 +122,6 @@ public class CRUD {
         }
     }
 
-    public static String readAlltoString(String binaryFilePath) {
-        String retorno = "";
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
-            raf.seek(4); // Pula o contador de registros
-            while (raf.getFilePointer() < raf.length()) {
-                byte lapide = raf.readByte();
-                // System.out.print("Ponteiro: " + raf.getFilePointer() + " / Tamanho do arquivo: " + raf.length()
-                        // + " / Lápide: " + lapide);
-                if (lapide == 1) {
-                    // System.out.println(" Registro excluído. Pulando...");
-                    int recordSize = raf.readInt();
-                    raf.skipBytes(recordSize);
-                    continue;
-                }
-                int recordSize = raf.readInt();
-                // System.out.println(" / Tamanho do registro: " + recordSize);
-                byte[] recordBytes = new byte[recordSize];
-                try {
-                    raf.readFully(recordBytes);
-                } catch (EOFException e) {
-                }
-                if (lapide == 0) {
-                    Carro carro = deserializeCarro(recordBytes);
-                    // System.out.println(carro.toString()); // comentar essa linha
-                    retorno += carro.toString2() + "\n";
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        // System.out.println("Retorno: " + retorno);
-        // System.out.println("Retornando a função readAlltoString");
-        return retorno;
-    }
-
     // ReadById - lê um registro específico (recebe o ID do registro como parâmetro)
     public static boolean readById(String binaryFilePath, int carId) {
         boolean isFound = false;
@@ -199,16 +129,16 @@ public class CRUD {
             raf.seek(4); // Pula o contador de registros
             while (raf.getFilePointer() < raf.length()) {
                 byte lapide = raf.readByte();
-                // System.out.print("Ponteiro: " + raf.getFilePointer() + " / Tamanho do arquivo: " + raf.length()
-                        // + " / Lápide: " + lapide);
+                System.out.print("Ponteiro: " + raf.getFilePointer() + " / Tamanho do arquivo: " + raf.length()
+                        + " / Lápide: " + lapide);
                 if (lapide == 1) {
-                    // System.out.println(" Registro excluído. Pulando...");
+                    System.out.println(" Registro excluído. Pulando...");
                     int recordSize = raf.readInt();
                     raf.skipBytes(recordSize);
                     continue;
                 }
                 int recordSize = raf.readInt();
-                // System.out.println(" / Tamanho do registro: " + recordSize);
+                System.out.println(" / Tamanho do registro: " + recordSize);
                 byte[] recordBytes = new byte[recordSize];
                 try {
                     raf.readFully(recordBytes);
@@ -232,16 +162,14 @@ public class CRUD {
         return isFound;
     }
 
-    // readByPosicao - lê um registro específico (recebe a posição do registro como
-    // parâmetro, além do id para conferir)
+    // readByPosicao - lê um registro específico (recebe a posição do registro como parâmetro, além do id para conferir)
     public static boolean readByPosicao(String binaryFilePath, int posicao, int carId) {
         boolean isFound = false;
         try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
             raf.seek(4); // Pula o contador de registros
             raf.seek(posicao);
             byte lapide = raf.readByte();
-            System.out.println("Ponteiro: " + raf.getFilePointer() + " / Tamanho do arquivo: " + raf.length()
-                    + " / Lápide: " + lapide);
+            System.out.println("Ponteiro: " + raf.getFilePointer() + " / Tamanho do arquivo: " + raf.length() + " / Lápide: " + lapide);
             if (lapide == 1) {
                 System.out.println(" Registro excluído. Pulando...");
                 int recordSize = raf.readInt();
@@ -389,139 +317,6 @@ public class CRUD {
         return baos.toByteArray();
     }
 
-    // Retornar um vetor de bytes a partir do arquivo binário
-    public static byte[] getBytesFromFile(String binaryFilePath) {
-        byte[] data = null;
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
-            data = new byte[(int) raf.length()];
-            raf.readFully(data);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return data;
-    }
-
-    // Serializar um registro inteiro para um array de bytes
-    public static String BinaryToString(String binaryFilePath) {
-        // try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
-        // DataInputStream dis = new DataInputStream(bais)) {
-        StringBuilder retorno = new StringBuilder();
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
-            raf.seek(0);
-            int numberOfRecords = raf.readInt();
-            retorno.append(numberOfRecords);
-            retorno.append('|');
-            // System.out.println("(BinaryToString) Número de registros: " + numberOfRecords);
-            raf.seek(4); // Pula o contador de registros
-            while (raf.getFilePointer() < raf.length()) {
-                byte lapide = raf.readByte();
-                retorno.append(lapide);
-                retorno.append('|');
-                // System.out.println("Ponteiro: " + raf.getFilePointer() + " / Tamanho do
-                // arquivo: " + raf.length());
-                int recordSize = raf.readInt();
-                retorno.append(recordSize);
-                retorno.append('|');
-                byte[] recordBytes = new byte[recordSize];
-                try {
-                    raf.readFully(recordBytes);
-                    // System.out.println("Lapide: " + lapide + " Tamanho: " + recordSize + "
-                    // Registro: " + new String(recordBytes));
-                    Carro carro = deserializeCarro(recordBytes);
-                    retorno.append(carro.getId());
-                    retorno.append('|');
-                    retorno.append(carro.getCarMake());
-                    retorno.append('|');
-                    retorno.append(carro.getCarModel());
-                    retorno.append('|');
-                    for (String hp : carro.getHp_Torque()) {
-                        retorno.append(hp);
-                        retorno.append(',');
-                    }
-                    retorno.append('|');
-                    retorno.append(carro.getDateInMilliseconds());
-                    retorno.append('|');
-                    retorno.append(carro.getZeroToSixty());
-                    retorno.append('|');
-                    retorno.append(carro.getPrice());
-                    retorno.append(';');
-                    // System.out.println(carro.toString()); // comentar essa linha
-                } catch (EOFException e) {
-                    e.printStackTrace();
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return retorno.toString();
-    }
-
-    public static void StringToBinary(String str, String outputFilePath) {
-        try (RandomAccessFile raf = new RandomAccessFile(outputFilePath, "rw")) {
-            raf.setLength(0); // Limpando arquivo
-            String numeroRegistros = "";
-            while (str.charAt(0) != '|') {
-                numeroRegistros += str.charAt(0);
-                str = str.substring(1);
-            }
-            int numberOfRecords = Integer.parseInt(numeroRegistros);
-            // System.out.println(str.substring(0, 9) + " 10 primeiros caracteres");
-            // avançar cursor uma posição
-            // System.out.println("(StringToBinary) Número de registros: " + numberOfRecords);
-            raf.seek(0);
-            raf.writeInt(numberOfRecords);
-            // reader.readLine(); // comentar
-            str = str.substring(1);
-            // System.out.println(str);
-            raf.seek(4); // Pula o contador de registros
-            String[] registros = str.split(";");
-            for (String registro : registros) {
-                try {
-                    // System.out.println("Registro: " + registro);
-                    byte lapide = (byte) Integer.parseInt(registro.charAt(0) + "");
-                    raf.seek(raf.length());
-                    raf.writeByte(lapide);
-                    // reader.readLine(); // comentar
-                    // System.out.println("Lapide: " + registro.charAt(0) + " / (" + lapide + ") ");
-                    String[] campos = registro.substring(1).split("\\|");
-                    int contadorDeCampos = 0;
-                    for (String campo : campos) {
-                        // System.out.print("Campo " + contadorDeCampos + ": " + campo + "  ");
-                        contadorDeCampos++;
-                    }
-                    // System.out.println();
-                    int recordSize = Integer.parseInt(campos[1]);
-                    raf.writeInt(recordSize);
-                    // reader.readLine(); // comentar
-                    int id = Integer.parseInt(campos[2]);
-                    // System.out.println("Tamanho: " + recordSize + " ID: " + id);
-                    String carMake = campos[3];
-                    String carModel = campos[4];
-                    String[] hpTorque = new String[2];
-                    hpTorque[0] = campos[5].split(",")[0];
-                    hpTorque[1] = campos[5].split(",")[1].substring(0, campos[5].split(",")[1].length());
-                    String stringDateInMilliseconds = campos[6];
-                    // long dateInMilliseconds = Long.parseLong(stringDateInMilliseconds);
-                    String stringZeroToSixty = campos[7];
-                    float zeroToSixty = Float.parseFloat(stringZeroToSixty);
-                    String stringPrice = campos[8];
-                    float price = Float.parseFloat(stringPrice);
-                    Carro carro = new Carro(id, carMake, carModel, hpTorque[0], hpTorque[1], stringDateInMilliseconds,
-                            zeroToSixty, price);
-                    // System.out.println(carro.toString2());
-                    // System.out.println(carro.toString());
-                    byte[] carroSerializado = serializeCarro(carro);
-                    // raf.writeInt(carroSerializado.length);
-                    raf.write(carroSerializado);
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    // System.out.println("Fim do arquivo.");
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     // Desserializar um array de bytes para um objeto RegistroCarro
     private static Carro deserializeCarro(byte[] data) throws IOException {
         try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
@@ -539,7 +334,7 @@ public class CRUD {
             float zeroToSixty = dis.readFloat();
             float price = dis.readFloat();
 
-            String dateString = Aplicacao.convertMillisToDate(dateInMilliseconds);
+            String dateString = DateConverter.convertMillisToDate(dateInMilliseconds);
 
             return new Carro(id, carMake, carModel, hpTorque, dateString, zeroToSixty, price);
         }
@@ -548,7 +343,7 @@ public class CRUD {
     // Update para lidar com atualizações parciais
     private static void updateCarFields(Carro carro, Carro carroAtualizado) {
         // if (carroAtualizado.getId() > -1) {
-        // carro.setId(carroAtualizado.getId());
+        //     carro.setId(carroAtualizado.getId());
         // }
         if (carroAtualizado.getCarMake() != null) {
             carro.setCarMake(carroAtualizado.getCarMake());

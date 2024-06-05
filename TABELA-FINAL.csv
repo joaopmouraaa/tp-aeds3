@@ -641,7 +641,7 @@ id;Car Make;Car Model;Horsepower_Torque;Date;0-60 MPH Time (seconds);Price (in U
 639;Porsche;Cayman GT4;414, 309;01/01/2021;4.2;101,000
 640;Rimac;Nevera;1914, 1696;01/01/2021;1.9;2,400,000
 641;Rolls-Royce;Wraith;624, 605;01/01/2021;4.4;330,000
-642;Tesla;Model S Plaid;;01/01/2021;1.9;139,990
+642;Tesla;Model S Plaid;1020, 1050;01/01/2021;1.9;139,990
 643;Toyota;Supra;382, 368;01/01/2021;3.9;43,000
 644;Porsche;718 Boxster;300, 280;01/01/2021;4.9;62,000
 645;Porsche;718 Boxster;300, 280;01/01/2022;4.9;62,000
@@ -877,7 +877,7 @@ id;Car Make;Car Model;Horsepower_Torque;Date;0-60 MPH Time (seconds);Price (in U
 875;Jaguar;F-Type;380, 339;01/01/2021;4.4;62,750
 876;Lexus;LC 500;471, 398;01/01/2021;4.4;92,000
 877;Lotus;Evija;2000, 1254;01/01/2021;2.8;2,800,000
-878;Maserati;GranTurismo;;01/01/2021;2.8;200,000
+878;Maserati;GranTurismo;454, 384;01/01/2021;2.8;200,000
 879;Nissan;370Z;332, 270;01/01/2021;5;30,090
 880;Rolls-Royce;Ghost;563, 627;01/01/2021;4.6;332,500
 881;Porsche;Taycan;402, 254;01/01/2021;5.1;81,250
@@ -915,7 +915,7 @@ id;Car Make;Car Model;Horsepower_Torque;Date;0-60 MPH Time (seconds);Price (in U
 913;Nissan;370Z Nismo;350, 276;01/01/2021;4.5;45,790
 914;Porsche;Panamera;325, 331;01/01/2022;5.3;88,800
 915;Subaru;WRX STI;310, 290;01/01/2021;5.2;38,170
-916;Tesla;Roadster;;01/01/2022;1.9;200,000
+916;Tesla;Roadster;1000, 7000;01/01/2022;1.9;200,000
 917;Porsche;718 Cayman;300, 280;01/01/2022;4.9;61,500
 918;Lamborghini;Aventador;729, 509;01/01/2021;2.9;393,695
 919;Ferrari;SF90 Stradale;986, 590;01/01/2022;2.5;625,000
