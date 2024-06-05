@@ -5,7 +5,7 @@ class myStruct {
     public long posicao;
 }
 
-public class CRUD {
+public class CRUD_TP2 {
 
     // Checa se o arquivo da árvore está vazio
     public static boolean isFileEmpty(String binaryFilePath) {
@@ -54,7 +54,7 @@ public class CRUD {
     }
 
     // Create
-    public static myStruct create(String binaryFilePath, Carro registroCarro) throws IOException {
+    public static myStruct create(String binaryFilePath, Carro_TP2 registroCarro) throws IOException {
         try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "rw")) {
             boolean registroExiste = false;
             raf.seek(4); // Pula o contador de registros
@@ -64,7 +64,7 @@ public class CRUD {
                     if (lapide != 1) {
                         byte[] registroAtualBytes = new byte[tamanhoRegistro];
                         raf.readFully(registroAtualBytes);
-                        Carro carroExistente = deserializeCarro(registroAtualBytes);
+                        Carro_TP2 carroExistente = deserializeCarro(registroAtualBytes);
                         if (carroExistente.getId() == registroCarro.getId()) {
                             registroExiste = true;
                             break;
@@ -113,7 +113,7 @@ public class CRUD {
                 } catch (EOFException e) {
                 }
                 if (lapide == 0) {
-                    Carro carro = deserializeCarro(recordBytes);
+                    Carro_TP2 carro = deserializeCarro(recordBytes);
                     System.out.println(carro.toString());
                 }
             }
@@ -145,7 +145,7 @@ public class CRUD {
                 } catch (EOFException e) {
                 }
                 if (lapide == 0) {
-                    Carro carro = deserializeCarro(recordBytes);
+                    Carro_TP2 carro = deserializeCarro(recordBytes);
                     if (carro.getId() == carId) {
                         System.out.println(" Registro encontrado: " + carro.toString());
                         isFound = true;
@@ -178,7 +178,7 @@ public class CRUD {
                 int recordSize = raf.readInt();
                 byte[] recordBytes = new byte[recordSize];
                 raf.readFully(recordBytes);
-                Carro carro = deserializeCarro(recordBytes);
+                Carro_TP2 carro = deserializeCarro(recordBytes);
                 if (carro.getId() == carId) {
                     System.out.println(" Registro encontrado: " + carro.toString());
                     isFound = true;
@@ -195,7 +195,7 @@ public class CRUD {
     }
 
     // Update
-    public static int update(int id, Carro carroAtualizado, String binaryFilePath) throws IOException {
+    public static int update(int id, Carro_TP2 carroAtualizado, String binaryFilePath) throws IOException {
         int novaPos = -1; // posicao atualizada
         RandomAccessFile file = new RandomAccessFile(binaryFilePath, "rw");
         file.seek(4); // Pula o contador de registros
@@ -208,7 +208,7 @@ public class CRUD {
                 byte[] registroAtualBytes = new byte[tamanhoRegistro];
                 file.readFully(registroAtualBytes);
                 // Deserializa o registro para objeto Carro e verifica o ID
-                Carro carro = deserializeCarro(registroAtualBytes);
+                Carro_TP2 carro = deserializeCarro(registroAtualBytes);
                 if (carro.getId() == id) {
                     // Atualiza os campos do carro existente com os do carro atualizado
                     updateCarFields(carro, carroAtualizado);
@@ -254,7 +254,7 @@ public class CRUD {
                 if (lapide == 0) {
                     byte[] recordBytes = new byte[recordSize];
                     raf.readFully(recordBytes); // Lê o registro
-                    Carro carro = deserializeCarro(recordBytes); // Desserializa
+                    Carro_TP2 carro = deserializeCarro(recordBytes); // Desserializa
                     if (carro.getId() == carId) {
                         isFound = true;
                         raf.seek(recordStart); // Volta para o início do registro
@@ -300,7 +300,7 @@ public class CRUD {
     }
 
     // Serializar um objeto RegistroCarro para um array de bytes
-    private static byte[] serializeCarro(Carro registroCarro) throws IOException {
+    private static byte[] serializeCarro(Carro_TP2 registroCarro) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeInt(registroCarro.getId());
@@ -318,7 +318,7 @@ public class CRUD {
     }
 
     // Desserializar um array de bytes para um objeto RegistroCarro
-    private static Carro deserializeCarro(byte[] data) throws IOException {
+    private static Carro_TP2 deserializeCarro(byte[] data) throws IOException {
         try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
                 DataInputStream dis = new DataInputStream(bais)) {
             int id = dis.readInt();
@@ -334,14 +334,14 @@ public class CRUD {
             float zeroToSixty = dis.readFloat();
             float price = dis.readFloat();
 
-            String dateString = DateConverter.convertMillisToDate(dateInMilliseconds);
+            String dateString = DateConverter_TP2.convertMillisToDate(dateInMilliseconds);
 
-            return new Carro(id, carMake, carModel, hpTorque, dateString, zeroToSixty, price);
+            return new Carro_TP2(id, carMake, carModel, hpTorque, dateString, zeroToSixty, price);
         }
     }
 
     // Update para lidar com atualizações parciais
-    private static void updateCarFields(Carro carro, Carro carroAtualizado) {
+    private static void updateCarFields(Carro_TP2 carro, Carro_TP2 carroAtualizado) {
         // if (carroAtualizado.getId() > -1) {
         //     carro.setId(carroAtualizado.getId());
         // }

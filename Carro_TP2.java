@@ -1,7 +1,7 @@
 import java.io.Serializable;
 import java.util.Arrays;
 
-public class Carro implements Serializable {
+public class Carro_TP2 implements Serializable {
     // Atributos da classe
     private int id; // String de tamanho fixo
     private String carMake; // String de tamanho variável (Marca)
@@ -14,18 +14,18 @@ public class Carro implements Serializable {
 
     // Construtores
 
-    public Carro() {
+    public Carro_TP2() {
         //
     }
 
-    public Carro(int id, String carMake, String carModel, String[] hpTorque, String dateString, float zeroToSixty,
+    public Carro_TP2(int id, String carMake, String carModel, String[] hpTorque, String dateString, float zeroToSixty,
             float price) {
         this.id = id;
         this.carMake = carMake;
         this.carModel = carModel;
         this.hp_Torque = hpTorque;
         this.date = dateString;
-        this.dateInMilliseconds = DateConverter.convertDateToMillis(dateString);
+        this.dateInMilliseconds = DateConverter_TP2.convertDateToMillis(dateString);
         this.zeroToSixty = zeroToSixty;
         this.price = price;
     }
@@ -81,7 +81,7 @@ public class Carro implements Serializable {
 
     public void setDate(String date) {
         this.date = date;
-        this.dateInMilliseconds = DateConverter.convertDateToMillis(date);
+        this.dateInMilliseconds = DateConverter_TP2.convertDateToMillis(date);
     }
 
     public void setDateInMilliseconds(long dateInMilliseconds) {

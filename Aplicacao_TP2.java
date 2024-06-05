@@ -6,7 +6,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.lang.reflect.Constructor;
 
-public class Aplicacao {    
+public class Aplicacao_TP2 {    
     public static void main(String[] args) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         String binaryFilePath = "./binario.bin";
@@ -16,8 +16,8 @@ public class Aplicacao {
         String bucketFilePath = "./bucket.bin";
         String dictionaryFilePath = "./dictionary.bin";
         String blocksFilePath = "./blocks.bin";
-        CRUD.inicializarContadorDeRegistros(binaryFilePath);
-        System.out.println("Contador de registros inicializado. Contando registros: " + CRUD.getNumeroRegistros(binaryFilePath) + " registros. ");
+        CRUD_TP2.inicializarContadorDeRegistros(binaryFilePath);
+        System.out.println("Contador de registros inicializado. Contando registros: " + CRUD_TP2.getNumeroRegistros(binaryFilePath) + " registros. ");
         System.out.println("Quer trabalhar com Árvore B+, Hash Extensível ou Lista Invertida?");
         System.out.println("1. Árvore B+");
         System.out.println("2. Hash Extensível");
@@ -77,10 +77,10 @@ public class Aplicacao {
                         float zeroToSixty = Float.parseFloat(reader.readLine());
                         System.out.print("Digite o preço do carro: ");
                         float price = Float.parseFloat(reader.readLine());
-                        int id = CRUD.getNumeroRegistros(binaryFilePath); // ID
-                        Carro carro = new Carro(id, carMake, carModel, hpTorque, date, zeroToSixty, price);
+                        int id = CRUD_TP2.getNumeroRegistros(binaryFilePath); // ID
+                        Carro_TP2 carro = new Carro_TP2(id, carMake, carModel, hpTorque, date, zeroToSixty, price);
                         System.out.println(carro.toString());
-                        myStruct resultado = CRUD.create(binaryFilePath, carro);
+                        myStruct resultado = CRUD_TP2.create(binaryFilePath, carro);
                         if (resultado.sucesso) {
                             // implementar inserção na árvore com ID e endereço do carro no arquivo binário
                             if ("1".equals(escolha)) {
@@ -90,7 +90,7 @@ public class Aplicacao {
                             } else if ("3".equals(escolha)) {
                                 insertIntoInvertedList(carro, resultado, invertedList, binaryFilePath);
                             }
-                            CRUD.incrementarContadorDeRegistros(binaryFilePath);
+                            CRUD_TP2.incrementarContadorDeRegistros(binaryFilePath);
                             System.out.println("Registro criado com o id " + carro.getId() + ".");
                         }
                         break;
@@ -105,15 +105,15 @@ public class Aplicacao {
                     if ("1".equals(escolha)) {
                         System.out.println("Árvore B+...");
                         createDatabaseFromCSV(csvFilePath, binaryFilePath, bTree);
-                        CRUD.readAll(binaryFilePath);
+                        CRUD_TP2.readAll(binaryFilePath);
                     } else if ("2".equals(escolha)) {
                         System.out.println("Hash Extensível...");
                         createDatabaseFromCSV(csvFilePath, binaryFilePath, hash);
-                        CRUD.readAll(binaryFilePath);
+                        CRUD_TP2.readAll(binaryFilePath);
                     } else if ("3".equals(escolha)) {
                         System.out.println("Lista Invertida...");
                         createDatabaseFromCSV(csvFilePath, binaryFilePath, invertedList);
-                        CRUD.readAll(binaryFilePath);
+                        CRUD_TP2.readAll(binaryFilePath);
                     } else {
                         System.out.println("Opção inválida. Tente novamente.");
                     }
@@ -151,18 +151,18 @@ public class Aplicacao {
                     } else {
                         System.out.println("Buscando no arquivo de registros, na posição " + posicao + ".");
                         int IntIdRead = Integer.parseInt(idRead);
-                        CRUD.readByPosicao(binaryFilePath, posicao, IntIdRead);
+                        CRUD_TP2.readByPosicao(binaryFilePath, posicao, IntIdRead);
                     }
                     break;
                 case '3':
                     System.out.print("Digite o ID do carro que deseja atualizar: ");
                     int idAtualiza = Integer.parseInt(reader.readLine());
-                    boolean carroExiste = CRUD.readById(binaryFilePath, idAtualiza);
+                    boolean carroExiste = CRUD_TP2.readById(binaryFilePath, idAtualiza);
                     if (!carroExiste) {
                         break;
                     }
                     // Cria um objeto Carro para representar os dados atualizados
-                    Carro carroAtualizado = new Carro();
+                    Carro_TP2 carroAtualizado = new Carro_TP2();
                     // carroAtualizado.setId(idAtualiza); // ID não é alterado
                     int contadorCamposAtualizados = 0;
                     // Pergunta para cada campo se o usuário deseja atualizar
@@ -215,7 +215,7 @@ public class Aplicacao {
                         System.out.println("Nenhum campo foi atualizado.");
                         break;
                     }
-                    int novaPos = CRUD.update(idAtualiza, carroAtualizado, binaryFilePath);
+                    int novaPos = CRUD_TP2.update(idAtualiza, carroAtualizado, binaryFilePath);
                     if (novaPos == -1) {
                         System.out.println("Erro ao atualizar o registro.");
                     } else {
@@ -240,7 +240,7 @@ public class Aplicacao {
                     System.out.print("Digite o ID do carro que deseja deletar: ");
                     int idDelete = Integer.parseInt(reader.readLine());
                     // Chama o método de deleção
-                    boolean deletou = CRUD.deleteById(binaryFilePath, idDelete);
+                    boolean deletou = CRUD_TP2.deleteById(binaryFilePath, idDelete);
                     if (deletou) {
                         boolean deletouIndice = false;
                         if ("1".equals(escolha)) {
@@ -272,7 +272,7 @@ public class Aplicacao {
                     break;
                 case '5':
                     System.out.println("Lendo todos os registros...");
-                    CRUD.readAll(binaryFilePath);
+                    CRUD_TP2.readAll(binaryFilePath);
                     break;
                 case '6':
                     System.out.println("Salvando e saindo...");
@@ -290,9 +290,9 @@ public class Aplicacao {
             if (lines.indexOf(line) == 0) continue; // Ignora o cabeçalho
             String[] data = line.split(";");
             String[] hpTorqueArray = data[3].split(","); // Divide a string hp_Torque em um array
-            int carId = CRUD.getNumeroRegistros(binaryFilePath);
+            int carId = CRUD_TP2.getNumeroRegistros(binaryFilePath);
             System.out.print(carId + " ");
-            Carro carro = new Carro(
+            Carro_TP2 carro = new Carro_TP2(
                 carId, // ID
                 data[1], // Car Make
                 data[2], // Car Model
@@ -302,16 +302,16 @@ public class Aplicacao {
                 Float.parseFloat(data[6].replaceAll("\\,", "")) // Preço
             );
             // System.out.println(carro.toString());
-            myStruct resultado = CRUD.create(binaryFilePath, carro);
+            myStruct resultado = CRUD_TP2.create(binaryFilePath, carro);
             if (resultado.sucesso) {
                 // implementar inserção na árvore com ID e endereço do carro no arquivo binário
                 // System.out.print("Inserindo na árvore o carro id " + carro.getId() + " com posição " + resultado.posicao);
                 insertIntoBTree(carro, resultado, bTree, binaryFilePath);                
-                CRUD.incrementarContadorDeRegistros(binaryFilePath);
+                CRUD_TP2.incrementarContadorDeRegistros(binaryFilePath);
                 // System.out.println(". Registro criado com o id " + carro.getId() + ".");
             }
         }
-        System.out.println("\nTotal de registros: " + CRUD.getNumeroRegistros(binaryFilePath) + ".");
+        System.out.println("\nTotal de registros: " + CRUD_TP2.getNumeroRegistros(binaryFilePath) + ".");
     }
 
     private static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath, HashExtensivel<RegistroIDEndereco> hash) throws IOException {
@@ -321,8 +321,8 @@ public class Aplicacao {
             if (lines.indexOf(line) == 0) continue; // Ignora o cabeçalho
             String[] data = line.split(";");
             String[] hpTorqueArray = data[3].split(","); // Divide a string hp_Torque em um array
-            Carro carro = new Carro(
-                CRUD.getNumeroRegistros(binaryFilePath), // ID
+            Carro_TP2 carro = new Carro_TP2(
+                CRUD_TP2.getNumeroRegistros(binaryFilePath), // ID
                 data[1], // Car Make
                 data[2], // Car Model
                 hpTorqueArray, // hpTorque como um array (dividido pela vírgula)
@@ -331,12 +331,12 @@ public class Aplicacao {
                 Float.parseFloat(data[6].replaceAll("\\,", "")) // Preço
             );
             // System.out.println(carro.toString());
-            myStruct resultado = CRUD.create(binaryFilePath, carro);
+            myStruct resultado = CRUD_TP2.create(binaryFilePath, carro);
             if (resultado.sucesso) {
                 // implementar inserção na árvore com ID e endereço do carro no arquivo binário
                 // System.out.print("Inserindo na árvore o carro id " + carro.getId() + " com posição " + resultado.posicao);
                 insertIntoHash(carro, resultado, hash, binaryFilePath);
-                CRUD.incrementarContadorDeRegistros(binaryFilePath);
+                CRUD_TP2.incrementarContadorDeRegistros(binaryFilePath);
                 // temp++;
                 // if (temp == 6) {
                 //     break;
@@ -354,8 +354,8 @@ public class Aplicacao {
             if (lines.indexOf(line) == 0) continue; // Ignora o cabeçalho
             String[] data = line.split(";");
             String[] hpTorqueArray = data[3].split(","); // Divide a string hp_Torque em um array
-            Carro carro = new Carro(
-                CRUD.getNumeroRegistros(binaryFilePath), // ID
+            Carro_TP2 carro = new Carro_TP2(
+                CRUD_TP2.getNumeroRegistros(binaryFilePath), // ID
                 data[1], // Car Make
                 data[2], // Car Model
                 hpTorqueArray, // hpTorque como um array (dividido pela vírgula)
@@ -364,19 +364,19 @@ public class Aplicacao {
                 Float.parseFloat(data[6].replaceAll("\\,", "")) // Preço
             );
             // System.out.println(carro.toString());
-            myStruct resultado = CRUD.create(binaryFilePath, carro);
+            myStruct resultado = CRUD_TP2.create(binaryFilePath, carro);
             if (resultado.sucesso) {
                 // implementar inserção na árvore com ID e endereço do carro no arquivo binário
                 // System.out.print("Inserindo na árvore o carro id " + carro.getId() + " com posição " + resultado.posicao);
                 insertIntoInvertedList(carro, resultado, invertedList, binaryFilePath);                
-                CRUD.incrementarContadorDeRegistros(binaryFilePath);
+                CRUD_TP2.incrementarContadorDeRegistros(binaryFilePath);
                 // System.out.println(". Registro criado com o id " + carro.getId() + ".");
             }
         }
         // System.out.println("Total de registros criados: " + CRUD.getNumeroRegistros(binaryFilePath) + ".");
     }
 
-    private static void insertIntoBTree(Carro carro, myStruct resultado, BPTree bTree, String binaryFilePath) {
+    private static void insertIntoBTree(Carro_TP2 carro, myStruct resultado, BPTree bTree, String binaryFilePath) {
         // Converter o ID para String
         String idString = Integer.toString(carro.getId());
         // Converter a posição para int
@@ -389,7 +389,7 @@ public class Aplicacao {
         }
     }
 
-    private static void insertIntoHash(Carro carro, myStruct resultado, HashExtensivel<RegistroIDEndereco> hash, String binaryFilePath) {
+    private static void insertIntoHash(Carro_TP2 carro, myStruct resultado, HashExtensivel<RegistroIDEndereco> hash, String binaryFilePath) {
         if (hash == null) {
             System.out.println("Hash é nulo.");
             return;
@@ -410,7 +410,7 @@ public class Aplicacao {
         }
     }
 
-    private static void insertIntoInvertedList(Carro carro, myStruct resultado, ListaInvertida invertedList, String binaryFilePath) {
+    private static void insertIntoInvertedList(Carro_TP2 carro, myStruct resultado, ListaInvertida invertedList, String binaryFilePath) {
         // Converter o ID para String
         String idString = Integer.toString(carro.getId());
         // Converter a posição para int
