@@ -1,6 +1,4 @@
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 
 class myStruct {
     public boolean sucesso;
@@ -55,7 +53,7 @@ public class CRUD {
         }
     }
     // Create All
-    public static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath, KeyPair keyPair) {
+    public static void createDatabaseFromCSV(String csvFilePath, String binaryFilePath) {
         try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
             String line;
             inicializarContadorDeRegistros(binaryFilePath);
@@ -74,7 +72,7 @@ public class CRUD {
                 priceTemp = priceTemp.replace(",", "");
                 float price = Float.parseFloat(priceTemp);
                 Carro carro = new Carro(id, carMake, carModel, hpTorque, date, zeroToSixty, price);
-                if (create(binaryFilePath, carro, keyPair).sucesso) {
+                if (create(binaryFilePath, carro).sucesso) {
                     try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "rw")) {
                         raf.seek(0);
                         int numberOfRecords = raf.readInt();
@@ -91,23 +89,17 @@ public class CRUD {
     }
 
     // Create
-    public static myStruct create(String binaryFilePath, Carro registroCarro, KeyPair keyPair) throws IOException {
+    public static myStruct create(String binaryFilePath, Carro registroCarro) throws IOException {
         try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "rw")) {
             boolean registroExiste = false;
             raf.seek(4); // Pula o contador de registros
             while (raf.getFilePointer() < raf.length()) {
                 byte lapide = raf.readByte();
                 int tamanhoRegistro = raf.readInt();
-                if (lapide != 1 && lapide != 3) {
+                if (lapide != 1) {
                     byte[] registroAtualBytes = new byte[tamanhoRegistro];
                     raf.readFully(registroAtualBytes);
-                    Carro carroExistente;
-                    if (lapide == 2) {
-                        byte[] decryptedRecord = decryptBytes(registroAtualBytes, keyPair);
-                        carroExistente = deserializeCarro(decryptedRecord);
-                    } else {
-                        carroExistente = deserializeCarro(registroAtualBytes);
-                    }
+                    Carro carroExistente = deserializeCarro(registroAtualBytes);
                     if (carroExistente.getId() == registroCarro.getId()) {
                         registroExiste = true;
                         break;
@@ -135,14 +127,14 @@ public class CRUD {
     }
 
     // ReadAll - lê todos os registros
-    public static void readAll(String binaryFilePath, KeyPair keyPair) {
+    public static void readAll(String binaryFilePath) {
         try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
             raf.seek(4); // Pula o contador de registros
             while (raf.getFilePointer() < raf.length()) {
                 byte lapide = raf.readByte();
                 System.out.print("Ponteiro: " + raf.getFilePointer() + " / Tamanho do arquivo: " + raf.length()
                         + " / Lápide: " + lapide);
-                if (lapide == 1 || lapide == 3) {
+                if (lapide == 1) {
                     System.out.println(" Registro excluído. Pulando...");
                     int recordSize = raf.readInt();
                     raf.skipBytes(recordSize);
@@ -155,14 +147,8 @@ public class CRUD {
                     raf.readFully(recordBytes);
                 } catch (EOFException e) {
                 }
-                Carro carro;
                 if (lapide == 0) {
-                    carro = deserializeCarro(recordBytes);
-                    System.out.println(carro.toString());
-                } else if (lapide == 2) {
-                    byte[] decryptedRecord = decryptBytes(recordBytes, keyPair);
-                    recordBytes = decryptedRecord;
-                    carro = deserializeCarro(recordBytes);
+                    Carro carro = deserializeCarro(recordBytes);
                     System.out.println(carro.toString());
                 }
             }
@@ -179,7 +165,7 @@ public class CRUD {
                 byte lapide = raf.readByte();
                 // System.out.print("Ponteiro: " + raf.getFilePointer() + " / Tamanho do arquivo: " + raf.length()
                         // + " / Lápide: " + lapide);
-                if (lapide == 1 || lapide == 3) {
+                if (lapide == 1) {
                     // System.out.println(" Registro excluído. Pulando...");
                     int recordSize = raf.readInt();
                     raf.skipBytes(recordSize);
@@ -206,55 +192,8 @@ public class CRUD {
         return retorno;
     }
 
-    public static String readBoyerMoore(String binaryFilePath, String padrao, KeyPair keyPair) {
-        String retorno = "";
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
-            raf.seek(4); // Pula o contador de registros
-            while (raf.getFilePointer() < raf.length()) {
-                byte lapide = raf.readByte();
-                // System.out.print("Ponteiro: " + raf.getFilePointer() + " / Tamanho do arquivo: " + raf.length()
-                        // + " / Lápide: " + lapide);
-                if (lapide == 1 || lapide == 3) {
-                    // System.out.println(" Registro excluído. Pulando...");
-                    int recordSize = raf.readInt();
-                    raf.skipBytes(recordSize);
-                    continue;
-                }
-                int recordSize = raf.readInt();
-                // System.out.println(" / Tamanho do registro: " + recordSize);
-                byte[] recordBytes = new byte[recordSize];
-                try {
-                    raf.readFully(recordBytes);
-                } catch (EOFException e) {
-                }
-                if (lapide == 0) {
-                    Carro carro = deserializeCarro(recordBytes);
-                    // System.out.println(carro.toString()); // comentar essa linha
-                    String mensagem = carro.toString2();
-                    if (!BoyerMoore.boyerMoore(mensagem, padrao).isEmpty()) {
-                        retorno += carro.toString3() + "\n";
-                    }
-                } else if (lapide == 2) {
-                    byte[] decryptedRecord = decryptBytes(recordBytes, keyPair);
-                    recordBytes = decryptedRecord;
-                    Carro carro = deserializeCarro(recordBytes);
-                    // System.out.println(carro.toString()); // comentar essa linha
-                    String mensagem = carro.toString2();
-                    if (!BoyerMoore.boyerMoore(mensagem, padrao).isEmpty()) {
-                        retorno += carro.toString3() + "\n";
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        // System.out.println("Retorno: " + retorno);
-        // System.out.println("Retornando a função readAlltoString");
-        return retorno;
-    }
-
     // ReadById - lê um registro específico (recebe o ID do registro como parâmetro)
-    public static boolean readById(String binaryFilePath, int carId, KeyPair keyPair) {
+    public static boolean readById(String binaryFilePath, int carId) {
         boolean isFound = false;
         try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
             raf.seek(4); // Pula o contador de registros
@@ -262,7 +201,7 @@ public class CRUD {
                 byte lapide = raf.readByte();
                 // System.out.print("Ponteiro: " + raf.getFilePointer() + " / Tamanho do arquivo: " + raf.length()
                         // + " / Lápide: " + lapide);
-                if (lapide == 1 || lapide == 3) {
+                if (lapide == 1) {
                     // System.out.println(" Registro excluído. Pulando...");
                     int recordSize = raf.readInt();
                     raf.skipBytes(recordSize);
@@ -279,57 +218,18 @@ public class CRUD {
                     Carro carro = deserializeCarro(recordBytes);
                     if (carro.getId() == carId) {
                         System.out.println(" Registro encontrado: " + carro.toString());
-                        return true;
-                    }
-                } else if (lapide == 2) {
-                    byte[] decryptedRecord = decryptBytes(recordBytes, keyPair);
-                    recordBytes = decryptedRecord;
-                    Carro carro = deserializeCarro(recordBytes);
-                    if (carro.getId() == carId) {
-                        System.out.println(" Registro encontrado: " + carro.toString());
-                        return true;
+                        isFound = true;
+                        return isFound;
                     }
                 }
+            }
+            if (!isFound) {
+                System.out.println("Carro com ID " + carId + " não foi encontrado.");
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("Carro com ID " + carId + " não foi encontrado.");
         return isFound;
-    }
-
-    // ReadById - lê um registro específico (recebe o ID do registro como parâmetro e retorna a posição no arquivo)
-    public static long getCarPosition(String binaryFilePath, int carId, KeyPair keyPair) {
-        long position = -1;
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
-            raf.seek(4); // Pula o contador de registros
-            while (raf.getFilePointer() < raf.length()) {
-                position = raf.getFilePointer();
-                byte lapide = raf.readByte();
-                if (lapide == 1 || lapide == 3) {
-                    int recordSize = raf.readInt();
-                    raf.skipBytes(recordSize);
-                    continue;
-                }
-                int recordSize = raf.readInt();
-                byte[] recordBytes = new byte[recordSize];
-                raf.readFully(recordBytes);
-                if (lapide == 2) {
-                    byte[] decryptedRecord = decryptBytes(recordBytes, keyPair);
-                    recordBytes = decryptedRecord;
-                }
-                Carro carro = deserializeCarro(recordBytes);
-                if (carro.getId() == carId) {
-                    System.out.println("Registro encontrado: " + carro.toString());
-                    if (lapide == 0 || lapide == 2) return position;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        System.out.println("Carro com ID " + carId + " não foi encontrado.");
-        position = -1;
-        return position;
     }
 
     // readByPosicao - lê um registro específico (recebe a posição do registro como
@@ -342,7 +242,7 @@ public class CRUD {
             byte lapide = raf.readByte();
             System.out.println("Ponteiro: " + raf.getFilePointer() + " / Tamanho do arquivo: " + raf.length()
                     + " / Lápide: " + lapide);
-            if (lapide == 1 || lapide == 3) {
+            if (lapide == 1) {
                 System.out.println(" Registro excluído. Pulando...");
                 int recordSize = raf.readInt();
                 raf.skipBytes(recordSize);
@@ -375,7 +275,7 @@ public class CRUD {
             long posicaoAtual = file.getFilePointer();
             byte lapide = file.readByte();
             int tamanhoRegistro = file.readInt();
-            if (lapide != 1 && lapide != 3) { // Checa se o registro não está marcado com lápide
+            if (lapide != 1) { // Checa se o registro não está marcado com lápide
                 System.out.println("Lapide: " + lapide + " / Tamanho do registro: " + tamanhoRegistro);
                 byte[] registroAtualBytes = new byte[tamanhoRegistro];
                 file.readFully(registroAtualBytes);
@@ -414,209 +314,11 @@ public class CRUD {
         return novaPos;
     }
 
-    public static void findAndEncrypt(int id, String binaryFilePath, KeyPair keyPair) {
-        try (RandomAccessFile file = new RandomAccessFile(binaryFilePath, "rw")) {
-            long recordPosition = getCarPosition(binaryFilePath, id, keyPair); // Método hipotético para encontrar a posição do registro pelo ID
-            if (recordPosition == -1) {
-                System.out.println("Registro com ID " + id + " não encontrado.");
-                return;
-            }
-
-            file.seek(recordPosition);
-            byte lapide = file.readByte();
-            System.out.println("Lapide: " + lapide);
-            if (lapide == 2) {
-                System.out.println("Registro com ID " + id + " já está criptografado.");
-                return;
-            }
-            file.seek(recordPosition);
-            file.writeByte(1);
-            file.seek(recordPosition + 1);
-            int recordSize = file.readInt();
-            file.seek(recordPosition + 5);
-    
-            // Lê o registro original
-            byte[] originalRecord = new byte[recordSize];
-            file.readFully(originalRecord);
-            byte[] encryptedRecord = encryptBytes(originalRecord, keyPair);
-            file.seek(file.length());
-            file.writeByte(2);
-            file.writeInt(encryptedRecord.length);
-            file.write(encryptedRecord);
-            
-            System.out.println("Registro com ID " + id + " foi criptografado e adicionado ao final do arquivo.");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void findAndDecrypt(int id, String binaryFilePath, KeyPair keyPair) {
-        try (RandomAccessFile file = new RandomAccessFile(binaryFilePath, "rw")) {
-            long recordPosition = getCarPosition(binaryFilePath, id, keyPair); // Método hipotético para encontrar a posição do registro pelo ID
-            if (recordPosition == -1) {
-                System.out.println("Registro com ID " + id + " não encontrado.");
-                return;
-            }
-
-            file.seek(recordPosition);
-            byte lapide = file.readByte();
-            System.out.println("Lapide: " + lapide);
-            if (lapide == 0) {
-                System.out.println("Registro com ID " + id + " já está descriptografado.");
-                return;
-            }
-            file.seek(recordPosition);
-            file.writeByte(3);
-            file.seek(recordPosition + 1);
-            int recordSize = file.readInt();
-            file.seek(recordPosition + 5);
-    
-            // Lê o registro criptografado
-            byte[] encryptedRecord = new byte[recordSize];
-            file.readFully(encryptedRecord);
-            byte[] decryptedRecord = decryptBytes(encryptedRecord, keyPair);
-            file.seek(file.length());
-            file.writeByte(0);
-            file.writeInt(decryptedRecord.length);
-            file.write(decryptedRecord);
-            
-            System.out.println("Registro com ID " + id + " foi descriptografado e adicionado ao final do arquivo.");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void encryptAll(String binaryFilePath, KeyPair keyPair) {
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "rw")) {
-            raf.seek(4); // Pula o contador de registros
-            while (raf.getFilePointer() < raf.length()) {
-                long recordPosition = raf.getFilePointer();
-                byte lapide = raf.readByte();
-                if (lapide == 1 || lapide == 3) {
-                    int recordSize = raf.readInt();
-                    raf.skipBytes(recordSize);
-                    continue;
-                }
-                int recordSize = raf.readInt();
-                byte[] recordBytes = new byte[recordSize];
-                raf.readFully(recordBytes);
-                if (lapide == 0) {
-                    raf.seek(recordPosition);
-                    raf.writeByte(1);
-                    byte[] encryptedRecord = encryptBytes(recordBytes, keyPair);
-                    raf.seek(raf.length());
-                    raf.writeByte(2);
-                    raf.writeInt(encryptedRecord.length);
-                    raf.write(encryptedRecord);
-                }
-                raf.seek(recordPosition + 5 + recordSize);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void decryptAll(String binaryFilePath, KeyPair keyPair) {
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "rw")) {
-            raf.seek(4); // Pula o contador de registros
-            while (raf.getFilePointer() < raf.length()) {
-                long recordPosition = raf.getFilePointer();
-                byte lapide = raf.readByte();
-                if (lapide == 1 || lapide == 3) {
-                    int recordSize = raf.readInt();
-                    raf.skipBytes(recordSize);
-                    continue;
-                }
-                int recordSize = raf.readInt();
-                byte[] recordBytes = new byte[recordSize];
-                raf.readFully(recordBytes);
-                if (lapide == 2) {
-                    raf.seek(recordPosition);
-                    raf.writeByte(3);
-                    byte[] decryptedRecord = decryptBytes(recordBytes, keyPair);
-                    raf.seek(raf.length());
-                    raf.writeByte(0);
-                    raf.writeInt(decryptedRecord.length);
-                    raf.write(decryptedRecord);
-                }
-                raf.seek(recordPosition + 5 + recordSize);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static byte[] encryptBytes(byte[] bytes, KeyPair keyPair) {
-        byte[][] encryptedBytesArray = new byte[bytes.length][];
-        int totalLength = 0;
-
-        // Criptografa cada byte individualmente
-        for (int i = 0; i < bytes.length; i++) {
-            encryptedBytesArray[i] = keyPair.encryptByte(bytes[i]);
-            totalLength += encryptedBytesArray[i].length + 4; // 4 bytes para armazenar o comprimento
-        }
-
-        // Cria um vetor de bytes concatenado para todos os bytes criptografados
-        byte[] result = new byte[totalLength];
-        int currentIndex = 0;
-        for (byte[] encryptedBytes : encryptedBytesArray) {
-            int length = encryptedBytes.length;
-            result[currentIndex++] = (byte) (length >> 24);
-            result[currentIndex++] = (byte) (length >> 16);
-            result[currentIndex++] = (byte) (length >> 8);
-            result[currentIndex++] = (byte) length;
-            System.arraycopy(encryptedBytes, 0, result, currentIndex, length);
-            currentIndex += length;
-        }
-        return result;
-    }
-
-    // Método para descriptografar um vetor de bytes
-    public static byte[] decryptBytes(byte[] encryptedBytes, KeyPair keyPair) {
-        int index = 0;
-        byte[] tempBuffer = new byte[encryptedBytes.length];
-        int tempIndex = 0;
-
-        while (index < encryptedBytes.length) {
-            int length = ((encryptedBytes[index] & 0xFF) << 24) | ((encryptedBytes[index + 1] & 0xFF) << 16)
-                    | ((encryptedBytes[index + 2] & 0xFF) << 8) | (encryptedBytes[index + 3] & 0xFF);
-            index += 4;
-
-            byte[] encryptedByte = new byte[length];
-            System.arraycopy(encryptedBytes, index, encryptedByte, 0, length);
-            index += length;
-
-            byte decryptedByte = keyPair.decryptByte(encryptedByte);
-            tempBuffer[tempIndex++] = decryptedByte;
-        }
-
-        // Copia os bytes descriptografados para um vetor do tamanho correto
-        byte[] result = new byte[tempIndex];
-        System.arraycopy(tempBuffer, 0, result, 0, tempIndex);
-
-        return result;
-    }
-
-    public static byte[] decryptRecord(byte[] encryptedRecord, KeyPair keyPair) {
-        ByteArrayInputStream encryptedFile = new ByteArrayInputStream(encryptedRecord);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            while (encryptedFile.available() > 0) {
-                byte[] encryptedByte = new byte[128];
-                encryptedFile.read(encryptedByte);
-                byte decryptedByte = keyPair.decryptByte(encryptedByte);
-                baos.write(decryptedByte);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return baos.toByteArray();
-    }
-
     // Delete
     public static boolean deleteById(String binaryFilePath, int carId) {
         try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "rw")) {
             raf.seek(4); // Pula o contador de registros
+            boolean isFound = false;
             while (raf.getFilePointer() < raf.length()) {
                 long recordStart = raf.getFilePointer();
                 byte lapide = raf.readByte();
@@ -626,6 +328,7 @@ public class CRUD {
                     raf.readFully(recordBytes); // Lê o registro
                     Carro carro = deserializeCarro(recordBytes); // Desserializa
                     if (carro.getId() == carId) {
+                        isFound = true;
                         raf.seek(recordStart); // Volta para o início do registro
                         raf.writeByte(1); // Atualiza a lápide para indicar que o registro foi excluído
                         System.out.println("Carro com ID " + carId + " foi deletado.");
@@ -636,50 +339,13 @@ public class CRUD {
                     raf.skipBytes(recordSize);
                 }
             }
+            if (!isFound) {
+                System.out.println("Carro com ID " + carId + " não foi encontrado.");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("Carro com ID " + carId + " não foi encontrado.");
         return false;
-    }
-
-    public static void consolidate(String binaryFilePath, KeyPair keyPair) {
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "rw")) {
-            int numberOfCars = 0;
-            raf.seek(4); // Pula o contador de registros
-            List<Carro> carros = new ArrayList<>();
-            while (raf.getFilePointer() < raf.length()) {
-                byte lapide = raf.readByte();
-                if (lapide == 1 || lapide == 3) {
-                    int recordSize = raf.readInt();
-                    raf.skipBytes(recordSize);
-                    continue;
-                }
-                int recordSize = raf.readInt();
-                byte[] recordBytes = new byte[recordSize];
-                raf.readFully(recordBytes);
-                Carro carro;
-                if (lapide == 0) {
-                    carro = deserializeCarro(recordBytes);
-                    carros.add(carro);
-                    numberOfCars++;
-                } else if (lapide == 2) {
-                    byte[] decryptedRecord = decryptBytes(recordBytes, keyPair);
-                    recordBytes = decryptedRecord;
-                    carro = deserializeCarro(recordBytes);
-                    carros.add(carro);
-                    numberOfCars++;
-                }
-            }
-            raf.seek(0);
-            raf.setLength(0);
-            raf.writeInt(numberOfCars);
-            for (Carro carro : carros) {
-                create(binaryFilePath, carro, keyPair);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     // Métodos auxiliares
@@ -735,20 +401,10 @@ public class CRUD {
         return data;
     }
 
-    // Retornar um vetor de bytes criptografado a partir do arquivo binario
-    public static byte[] getBytesFromFileAndEncrypt(String binaryFilePath, String encryptedFilePath) {
-        byte[] data = null;
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
-            data = new byte[(int) raf.length()];
-            raf.readFully(data);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return data;
-    }
-
-    // Serializar um arquivo inteiro para um array de bytes
-    public static String BinaryToString(String binaryFilePath, KeyPair keyPair) {
+    // Serializar um registro inteiro para um array de bytes
+    public static String BinaryToString(String binaryFilePath) {
+        // try (ByteArrayInputStream bais = new ByteArrayInputStream(data);
+        // DataInputStream dis = new DataInputStream(bais)) {
         StringBuilder retorno = new StringBuilder();
         try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
             raf.seek(0);
@@ -769,12 +425,9 @@ public class CRUD {
                 byte[] recordBytes = new byte[recordSize];
                 try {
                     raf.readFully(recordBytes);
-                    Carro carro;
-                    if (lapide == 2 || lapide == 3) {
-                        byte[] decryptedRecord = decryptBytes(recordBytes, keyPair);
-                        recordBytes = decryptedRecord;
-                    }
-                    carro = deserializeCarro(recordBytes);
+                    // System.out.println("Lapide: " + lapide + " Tamanho: " + recordSize + "
+                    // Registro: " + new String(recordBytes));
+                    Carro carro = deserializeCarro(recordBytes);
                     retorno.append(carro.getId());
                     retorno.append('|');
                     retorno.append(carro.getCarMake());
@@ -801,32 +454,6 @@ public class CRUD {
             e.printStackTrace();
         }
         return retorno.toString();
-    }
-
-    public static String BinaryToString2(String binaryFilePath) {
-        StringBuilder retorno = new StringBuilder();
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
-            raf.seek(0);
-            while (raf.getFilePointer() < raf.length()) {
-                byte b = raf.readByte();
-                retorno.append(b);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return retorno.toString();
-    }
-
-    public static byte[] BinaryToVector(String binaryFilePath) {
-        byte[] retorno = null;
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
-            raf.seek(0);
-            retorno = new byte[(int) raf.length()];
-            raf.readFully(retorno);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return retorno;
     }
 
     public static void StringToBinary(String str, String outputFilePath) {
@@ -940,15 +567,6 @@ public class CRUD {
         }
         if (carroAtualizado.getPrice() != 0.0f) {
             carro.setPrice(carroAtualizado.getPrice());
-        }
-    }
-
-    public void printBytes(byte[] bytes) {
-        try (ByteArrayOutputStream recordBytesStream = new ByteArrayOutputStream();) {
-            recordBytesStream.write(bytes);
-            System.out.println(recordBytesStream.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }

@@ -128,8 +128,4 @@ public class Carro implements Serializable {
     public String toString2() {
         return id + "#" + carMake + "#" + carModel + "#" + hp_Torque[0] + "#" + hp_Torque[1] + "#" + date + "#" + dateInMilliseconds + "#" + zeroToSixty + "#" + price + "|";
     }
-
-    public String toString3() {
-        return "| ID: "+ id + " | Nome: " + carMake + " " + carModel + " | Potencia: " + hp_Torque[0] + " | Torque: " + hp_Torque[1] + " | Lancamento: " + date + " | 0 a 60 MPH: " + zeroToSixty + " | Valor: " + price + " |";
-    }
 }
