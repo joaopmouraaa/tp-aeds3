@@ -1,7 +1,5 @@
 import java.io.BufferedReader;
-import java.io.EOFException;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
@@ -12,7 +10,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 
 public class Aplicacao {    
     public static void main(String[] args) throws IOException{
@@ -21,281 +18,165 @@ public class Aplicacao {
         // Nomes dos arquivos
         String binaryFilePath = "./binario.bin";
         String csvFilePath = "./TABELA-FINAL.csv";
-        // String csvFilePath = "./TABELA-PEQUENA.csv"; // para debug e demonstração
-        String arquivoVersao = "./versao.bin";
-        String arquivoCodigos = "./codigosHuffman.bin";
-        // Declarando variáveis que serão manipuladas posteriormente em escopos diferentes
-        long tamanhoOriginal = 0;
-        HashMap<Character, String> codigos = loadCodes(arquivoCodigos);
-        // Verifica consistência de arquivos
-        verificaArquivos(binaryFilePath, arquivoVersao);
-        // Armazena variáveis da versão atual dos arquivos comprimidos e o contador de registros do arquivo binário
-        int versao = getVersao(arquivoVersao);
+        String encryptedFilePath = "./encrypted.bin";
+        String decryptedFilePath = "./decrypted.bin";
+        String keyPairPath = "./keyPair.bin";
+
+        // Escolha do banco de dados
+        System.out.println("O algoritmo RSA pode demorar de 2 a 3 minutos ao usar o banco completo.");
+        System.out.println("1. Quero usar o banco completo (1007 registros).");
+        System.out.println("2. Quero usar o banco pequeno (3 registros).");
+        System.out.print("Digite sua escolha: ");
+        char escolha = reader.readLine().charAt(0);
+        if (escolha == '1') {
+            csvFilePath = "./TABELA-FINAL.csv";
+        } else if (escolha == '2') {
+            csvFilePath = "./TABELA-PEQUENA.csv";
+        } else {
+            System.out.println("Opção inválida. Usando o banco completo.");
+        }
+
+        // Carrega a chave pública e privada
+        KeyPair keyPair;
+        File keyFile = new File(keyPairPath);
+        if (keyFile.exists()) {
+            keyPair = KeyPair.loadKeyPairFromFile();
+            System.out.println("Par de chaves carregada do arquivo.");
+        } else {
+            keyPair = new KeyPair();
+            System.out.println("Novo par de chaves criado e salvo no arquivo.");
+        }
+
+        // Verifica se o arquivo binário possui registros
         System.out.print("Verificando arquivo de registros \""+binaryFilePath+"\"... ");
         CRUD.inicializarContadorDeRegistros(binaryFilePath);
         if (CRUD.getNumeroRegistros(binaryFilePath) == 0) {
             // Caso o número de registros seja 0 no arquivo binário, cria registros a partir do arquivo CSV
             System.out.print("\nCriando registros a partir do diretório padrão: \""+csvFilePath+"\"... ");
-            CRUD.createDatabaseFromCSV(csvFilePath, binaryFilePath);
+            CRUD.createDatabaseFromCSV(csvFilePath, binaryFilePath, keyPair);
             System.out.println(CRUD.getNumeroRegistros(binaryFilePath)+" registros criados com sucesso.");
         } else {
             System.out.println("Total: " + CRUD.getNumeroRegistros(binaryFilePath) + " registros. ");
         }
+        
+        // Calcula o hash SHA-256 do arquivo binário
+        String sha256 = sha256(CRUD.BinaryToString(binaryFilePath, keyPair));
 
-        char choice = '0';
-        while (choice != '5') {
+        char choice = 'w';
+        while (choice != '-') {
             System.out.println("----------------------------- MENU ------------------------------");
             System.out.println("Escolha uma opção:");
             System.out.println("1. Ler registro por ID");
             System.out.println("2. Ler todos os registros");
-            System.out.println("3. Compactar Huffman e LZW");
-            System.out.println("4. Descompactar Huffman e LZW");
-            System.out.println("5. Salvar e sair");
+            System.out.println("3. Buscar padrão nos registros");
+            System.out.println("4. Criptografar arquivo binario usando RSA");
+            System.out.println("5. Descriptografar arquivo binario usando RSA");
+            System.out.println("6. Criptografar registro usando RSA a partir do ID");
+            System.out.println("7. Descriptografar registro usando RSA a partir do ID");
+            System.out.println("8. Criptografar todos os registros usando RSA");
+            System.out.println("9. Descriptografar todos os registros usando RSA");
+            System.out.println("0. Consolidar registros em um novo arquivo binário");
+            System.out.println("-. Salvar e sair");
             System.out.println("-----------------------------------------------------------------");
             System.out.print("Digite sua escolha: ");
             choice = reader.readLine().charAt(0);
+            boolean cripto = false;
+
             switch (choice) {
                 case '1':
+                    // Lê um registro pelo ID
                     System.out.print("Digite o ID do registro que deseja ler: ");
                     int IntIdRead = Integer.parseInt(reader.readLine());
                     System.out.println("Buscando no arquivo de registros, na posição " + IntIdRead + ".");
-                    CRUD.readById(binaryFilePath, IntIdRead);
+                    CRUD.readById(binaryFilePath, IntIdRead, keyPair);
                     break;
                 case '2':
+                    // Lê todos os registros
                     System.out.println("Lendo todos os registros...");
-                    CRUD.readAll(binaryFilePath);
-                    break;                    
+                    CRUD.readAll(binaryFilePath, keyPair);
+                    break;
                 case '3':
-                    // Salva o valor do tamanho do arquivo binario original e a versão dos arquivos compactados
-                    tamanhoOriginal = new RandomAccessFile("binario.bin", "r").length();
-                    versao = getVersao(arquivoVersao);
-                    String nomeArquivoCompactado = "binarioHuffmanCompressao"+versao+".bin";
-                    String nomeArquivoCompactadoLZW = "binarioLZWCompressao"+versao+".bin";
-                    // Huffman
-                    System.out.print("\nCompactando Huffman... ");
-                    long huffman_tempo_compact = System.currentTimeMillis(); // tempo inicial
-                    String mensagem = CRUD.BinaryToString(binaryFilePath);
-                    // System.out.println("\nMensagem Huffman: \n"+mensagem+"\n"); // PARA DEBUG
-                    codigos = Huffman.generateCodes(mensagem);
-                    RandomAccessFile rafHuffman = new RandomAccessFile("codigosHuffman.bin", "rw");
-                    for (char c : codigos.keySet()) {
-                        rafHuffman.writeChar(c);
-                        rafHuffman.writeUTF(codigos.get(c));
+                    // Busca um padrão nos registros usando Boyer-Moore
+                    System.out.print("Digite o padrão que deseja buscar: ");
+                    String padrao = reader.readLine();
+                    String resposta = CRUD.readBoyerMoore(binaryFilePath, padrao, keyPair);
+                    System.out.println(resposta);
+                    if (resposta.length() == 0) {
+                        System.out.println("Padrão não encontrado em nenhum registro.");
                     }
-                    // System.out.println("Dicionário Huffman: "+codigos+"\n"); // PARA DEBUG
-                    String mensagemCodificada = Huffman.codifica(mensagem, codigos);
-                    int length = mensagemCodificada.length();
-                    while (length % 8 != 0) { // completando com bits para formar o último byte
-                        mensagemCodificada += "0";
-                        length++;
-                    }
-                    // System.out.println("Mensagem codificada Huffman: \n"+mensagemCodificada+"\n"); // PARA DEBUG
-                    byte[] bytes = new byte[length/8];
-                    for (int i = 0; i < mensagemCodificada.length(); i+=8) { // alocando bytes no vetor a partir da string mensagemCodificada
-                        String byteString = mensagemCodificada.substring(i, i+8);
-                        bytes[i / 8] = (byte) Integer.parseInt(byteString, 2);
-                    }
-                    RandomAccessFile raf = new RandomAccessFile(nomeArquivoCompactado, "rw");
-                    for (byte b : bytes) { // escrevendo os bytes no arquivo comprimido
-                        raf.writeByte(b);
-                    }
-                    raf.close();
-                    long huffman_tempo_compact_final = System.currentTimeMillis() - huffman_tempo_compact;;
-                    System.out.println("Sucesso na compactação Huffman.");
-
-                    // LZW
-                    System.out.print("Compactando LZW... ");
-                    long lzw_tempo_compact = System.currentTimeMillis(); // tempo inicial
-                    byte[] binaryBytes = CRUD.getBytesFromFile(binaryFilePath);
-                    byte[] msgBytes = binaryBytes;
-                    // {
-                    //     System.out.println("\nMensagem LZW (bytes): \n"+binaryBytes); // PARA DEBUG
-                    //     StringBuilder sb = new StringBuilder(); // PARA DEBUG
-                    //     for (byte b : msgBytes) { // PARA DEBUG
-                    //         sb.append((char)b); // PARA DEBUG
-                    //     } // PARA DEBUG
-                    //     System.out.println("Mensagem LZW (formato String): \n"+sb); // PARA DEBUG
-                    // }
-                    byte[] mensagemCodificadaLZW = null;
-                    try {
-                        mensagemCodificadaLZW = LZW.codifica(msgBytes);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    RandomAccessFile rafLZW = new RandomAccessFile(nomeArquivoCompactadoLZW, "rw");
-                    for (byte b : mensagemCodificadaLZW) { // escrevendo os bytes no arquivo comprimido
-                        rafLZW.writeByte(b);
-                    }
-                    rafLZW.close();
-                    long lzw_tempo_compact_final = System.currentTimeMillis() - lzw_tempo_compact;
-                    System.out.println("Sucesso na compressão LZW.");
-
-                    // Incrementa a versão os arquivos comprimidos
-                    atualizaVersao(arquivoVersao);
-
-                    // Análise
-                    long tamanhoFinalHuffman = new RandomAccessFile("binarioHuffmanCompressao"+versao+".bin", "r").length();
-                    double taxaCompressaoHuffman = (1 - (double) tamanhoFinalHuffman / tamanhoOriginal) * 100;
-                    long tamanhoFinalLZW = new RandomAccessFile("binarioLZWCompressao"+versao+".bin", "r").length();
-                    double taxaCompressaoLZW = (1 - (double) tamanhoFinalLZW / tamanhoOriginal) * 100;
-
-                    // Resultados da Compressão
-                    System.out.println("\n------------------- RESULTADOS DA COMPRESSAO --------------------");
-                    System.out.println("Tamanho original: " + tamanhoOriginal + " bytes.");
-                    System.out.println("--------------------------- HUFFFMAN ----------------------------");
-                    System.out.println("Tamanho final Huffman: " + tamanhoFinalHuffman + " bytes.");
-                    System.out.println("Tempo de compressão Huffman: " + huffman_tempo_compact_final + " ms.");
-                    System.out.printf("Taxa de compressão Huffman: %.2f%%.%n", taxaCompressaoHuffman);
-                    System.out.println("----------------------------- LZW -------------------------------");
-                    System.out.println("Tamanho final LZW: " + tamanhoFinalLZW + " bytes.");
-                    System.out.println("Tempo de compressão LZW: " + lzw_tempo_compact_final + " ms.");
-                    System.out.printf("Taxa de compressão LZW: %.2f%%.%n", taxaCompressaoLZW);
-                    System.out.println("-------------------------- COMPARAÇÃO ---------------------------");
-                    if (tamanhoFinalHuffman < tamanhoFinalLZW) {
-                        double percentualMaisEficiente = ((1 - (double) tamanhoFinalHuffman / tamanhoFinalLZW) * 100);
-                        System.out.printf("A compressão Huffman foi %.2f%% mais eficiente.%n", percentualMaisEficiente);
-                    } else {
-                        double percentualMaisEficiente = ((1 - (double) tamanhoFinalLZW / tamanhoFinalHuffman) * 100);
-                        System.out.printf("A compressão LZW foi %.2f%% mais eficiente.%n", percentualMaisEficiente);
-                    }
-                    if (huffman_tempo_compact_final < lzw_tempo_compact_final) {
-                        double percentualMaisRapido = ((1 - (double) huffman_tempo_compact_final / lzw_tempo_compact_final) * 100);
-                        System.out.printf("A compressão Huffman foi %.2f%% mais rápida.%n", percentualMaisRapido);
-                    } else {
-                        double percentualMaisRapido = ((1 - (double) lzw_tempo_compact_final / huffman_tempo_compact_final) * 100);
-                        System.out.printf("A compressão LZW foi %.2f%% mais rápida.%n", percentualMaisRapido);
-                    }
-                    System.out.println("-----------------------------------------------------------------\n");
                     break;
                 case '4':
-                    // Carregando variáveis que serão usadas na análise pós-descompressão
-                    tamanhoOriginal = new RandomAccessFile("binario.bin", "r").length();
-                    String shabinaryOriginal = sha256(CRUD.BinaryToString(binaryFilePath));
-                    // Verificando e listando os arquivos comprimidos
-                    int numeroVersoes = getVersao(arquivoVersao);
-                    boolean compactado = false;
-                    for (int i = 1; i <= numeroVersoes; i++) {
-                        if (new java.io.File("binarioHuffmanCompressao"+i+".bin").exists() && new java.io.File("binarioLZWCompressao"+i+".bin").exists()) {
-                            compactado = true;
-                            break;
-                        }
-                    }
-                    if (compactado) {
-                        for (int i = 1; i <= 15; i++) {
-                            if (new java.io.File("binarioHuffmanCompressao"+i+".bin").exists() && new java.io.File("binarioLZWCompressao"+i+".bin").exists()) {
-                                System.out.println("Versão "+i+" encontrada. Arquivos: ");
-                                System.out.println("-binarioHuffmanCompressao"+i+".bin");
-                                System.out.println("-binarioLZWCompressao"+i+".bin");
-                            }
-                        }
-                    }
-                    if (!compactado) {
-                        System.out.println("Nenhum arquivo compactado encontrado.");
-                        break;
-                    }
-                    // Escolha da versão
-                    System.out.println("Escolha a versão a ser descompactada:");
-                    System.out.print("Versão: ");
-                    String escolhaVersao = reader.readLine();
-                    int versaoEscolhida = 0;
-                    try {
-                        versaoEscolhida = Integer.parseInt(escolhaVersao);
-                    } catch (NumberFormatException e) {
-                        e.printStackTrace();
-                    }
-                    if (versaoEscolhida < 1 || versaoEscolhida >= numeroVersoes) {
-                        System.out.println("Versão inválida. Tente novamente.");
-                        break;
-                    }
-                    // Descompressão
-                    String input = "binarioHuffmanCompressao"+versaoEscolhida+".bin";
-                    String output = "binario.bin";
-                    // String output = "binarioLZW.bin"; // PARA DEBUG
-                    // Huffman
-                    System.out.print("\nDescompactando Huffman... ");
-                    long huffman_tempo_descompact = System.currentTimeMillis(); // tempo inicial
-                    RandomAccessFile raf2 = new RandomAccessFile(input, "r");
-                    byte[] conteudoArquivo = new byte[(int) raf2.length()]; // aloca um vetor de bytes do tamanho do arquivo
-                    raf2.readFully(conteudoArquivo);
-                    raf2.close();
-                    StringBuilder codificada = new StringBuilder();
-                    for (byte b : conteudoArquivo) { // Converte o vetor de bytes em uma string
-                        codificada.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
-                    }
-                    // System.out.println("Mensagem codificada: \n"+codificada); // PARA DEBUG
-                    String mensagemDescompactada = Huffman.decodifica(codificada.toString(), codigos);
-                    // System.out.println("Mensagem descompactada: \n"+mensagemDescompactada); // PARA DEBUG
-                    CRUD.StringToBinary(mensagemDescompactada, output);
-                    long huffman_tempo_descompact_final = System.currentTimeMillis() - huffman_tempo_descompact;
-                    System.out.println("Sucesso na descompactação Huffman.");
-                    long tamanhoFinal1 = new RandomAccessFile("binario.bin", "r").length();
-                    String shaBinaryHuffman = sha256(CRUD.BinaryToString("binario.bin"));
-
-                    // LZW
-                    String inputLZW = "binarioLZWCompressao"+versaoEscolhida+".bin";
-                    // String outputLZW = "binarioLZW.bin"; // PARA DEBUG
-                    String outputLZW = "binario.bin";
-                    System.out.print("Descompactando LZW... ");
-                    long lzw_tempo_descompact = System.currentTimeMillis(); // tempo inicial
-                    RandomAccessFile raf2LZW = new RandomAccessFile(inputLZW, "r");
-                    byte[] conteudoArquivoLZW = new byte[(int) raf2LZW.length()]; // aloca um vetor de bytes do tamanho do arquivo
-                    raf2LZW.readFully(conteudoArquivoLZW);
-                    raf2LZW.close();
-                    byte[] mensagemDescompactadaLZW = null;
-                    try {
-                        mensagemDescompactadaLZW = LZW.decodifica(conteudoArquivoLZW);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    // {
-                    //     System.out.println("\n\nMensagem descompactada LZW (bytes): \n"+mensagemDescompactadaLZW); // PARA DEBUG
-                    //     StringBuilder sb = new StringBuilder(); // PARA DEBUG
-                    //     for (byte b : mensagemDescompactadaLZW) { // PARA DEBUG
-                    //         sb.append((char)b); // PARA DEBUG
-                    //     } // PARA DEBUG
-                    //     System.out.println("Mensagem descompactada LZW (formato String): \n"+sb+"\n"); // PARA DEBUG
-                    // }
-
-                    RandomAccessFile rafLZW2 = new RandomAccessFile(outputLZW, "rw");
-                    for (byte b : mensagemDescompactadaLZW) {
-                        rafLZW2.writeByte(b);
-                    }
-                    long lzw_tempo_descompact_final = System.currentTimeMillis() - lzw_tempo_descompact;; // tempo inicial
-                    System.out.println("Sucesso na descompactação LZW.");
-                    long tamanhoFinal2 = new RandomAccessFile("binario.bin", "r").length();
-                    String shaBinaryLZW = sha256(CRUD.BinaryToString("binario.bin"));
-
-                    boolean integridade = ((shabinaryOriginal.equals(shaBinaryHuffman)) && (shabinaryOriginal.equals(shaBinaryLZW)));
-                    
-                    // Resultados da Descompressão
-                    System.out.println("\n------------------ RESULTADOS DA DESCOMPRESSAO ------------------");
-                    System.out.println("Tamanho do arquivo \"binario.bin\" após a descompactação:");
-                    System.out.println("-> " + tamanhoFinal1 + " bytes após a manipulação com Huffman.");
-                    System.out.println("-> " + tamanhoFinal2 + " bytes após a manipulação com LZW.");
-                    System.out.println("-------------------------- INTEGRIDADE --------------------------");
-                    System.out.println("SHA256 do binario.bin original: \n"+shabinaryOriginal);
-                    System.out.println("SHA256 do binario.bin após descompressão Huffman: \n"+shaBinaryHuffman);
-                    System.out.println("SHA256 do binario.bin após descompressão LZW: \n"+shaBinaryLZW);
-                    System.out.println("Ao comparar entre si as strings SHA256 do arquivo \"binario.bin\"");
-                    System.out.println("antes e após cada descompactação, podemos concluir que");
-                    System.out.println((integridade ? "não " : "") + "houve perda de integridade do \"binario.bin\" original.");
-                    System.out.println("---------------------------- HUFFMAN ----------------------------");
-                    System.out.println("Tempo de descompactação Huffman: " + huffman_tempo_descompact_final + " ms.");
-                    System.out.println("------------------------------ LZW ------------------------------");
-                    System.out.println("Tempo de descompactação LZW: " + lzw_tempo_descompact_final + " ms.");
-                    System.out.println("-------------------------- COMPARAÇÃO ---------------------------");
-                    if (huffman_tempo_descompact_final < lzw_tempo_descompact_final) {
-                        double percentualMaisRapido = ((1 - (double) huffman_tempo_descompact_final / lzw_tempo_descompact_final) * 100);
-                        System.out.printf("A descompactação Huffman foi %.2f%% mais rápida.%n", percentualMaisRapido);
-                    } else {
-                        double percentualMaisRapido = ((1 - (double) lzw_tempo_descompact_final / huffman_tempo_descompact_final) * 100);
-                        System.out.printf("A descompactação LZW foi %.2f%% mais rápida.%n", percentualMaisRapido);
-                    }
-                    System.out.println("-----------------------------------------------------------------\n");
+                    // Criptografia do arquivo usando RSA
+                    sha256 = sha256(CRUD.BinaryToString2(binaryFilePath));
+                    System.out.println("SHA256 do arquivo binário: " + sha256);
+                    System.out.print("Criptografando arquivo. "+ (escolha != 2 ? "Demora cerca de 2 minutos... " : ""));
+                    long start = System.currentTimeMillis();
+                    encryptFile(binaryFilePath, encryptedFilePath, keyPair);
+                    long end = System.currentTimeMillis();
+                    System.out.print("Concluído. ");
+                    System.out.println("Tempo de execução: " + (end - start)/1000 + " segundos");
+                    cripto = true;
                     break;
                 case '5':
+                    // Descriptografia do arquivo usando RSA
+                    if (cripto == false) {
+                        System.out.println("O arquivo ainda não foi criptografado. Criptografe o arquivo antes de descriptografá-lo.");
+                        break;
+                    }
+                    System.out.print("Descriptografando arquivo. "+ (escolha != 2 ? "Demora cerca de 3 minutos... " : ""));
+                    long start2 = System.currentTimeMillis();
+                    decryptFile(encryptedFilePath, decryptedFilePath, keyPair);
+                    long end2 = System.currentTimeMillis();
+                    System.out.print("Concluído. ");
+                    System.out.println("Tempo de execução: " + (end2 - start2)/1000 + " segundos");
+                    String sha256Decrypted = sha256(CRUD.BinaryToString2(decryptedFilePath));
+                    System.out.println("SHA256 do arquivo binário descriptografado: " + sha256Decrypted);
+                    if (sha256.equals(sha256Decrypted)) {
+                        System.out.println("Integridade do arquivo mantida.");
+                    } else {
+                        System.out.println("Integridade do arquivo comprometida.");
+                    }
+                    break;
+                case '6':
+                    // Criptografia de um registro específico
+                    System.out.print("Digite o ID do registro que deseja criptografar: ");
+                    int IntIdEncrypt = Integer.parseInt(reader.readLine());
+                    System.out.println("Criptografando registro com ID " + IntIdEncrypt + "...");
+                    CRUD.findAndEncrypt(IntIdEncrypt, binaryFilePath, keyPair);
+                    break;
+                case '7':
+                    // Descriptografia de um registro específico
+                    System.out.print("Digite o ID do registro que deseja descriptografar: ");
+                    int IntIdDecrypt = Integer.parseInt(reader.readLine());
+                    System.out.println("Descriptografando registro com ID " + IntIdDecrypt + "...");
+                    CRUD.findAndDecrypt(IntIdDecrypt, binaryFilePath, keyPair);
+                    break;
+                case '8':
+                    // Criptografia de todos os registros
+                    System.out.print("Criptografando todos os registros. "+ (escolha != 2 ? "Demora cerca de 2 minutos... " : ""));
+                    long start3 = System.currentTimeMillis();
+                    CRUD.encryptAll(binaryFilePath, keyPair);
+                    long end3 = System.currentTimeMillis();
+                    System.out.print("Concluído. ");
+                    System.out.println("Tempo de execução: " + (end3 - start3)/1000 + " segundos");
+                    break;
+                case '9':
+                    // Descriptografia de todos os registros
+                    System.out.print("Descriptografando todos os registros. "+ (escolha != 2 ? "Demora cerca de 3 minutos... " : ""));
+                    long start4 = System.currentTimeMillis();
+                    CRUD.decryptAll(binaryFilePath, keyPair);
+                    long end4 = System.currentTimeMillis();
+                    System.out.print("Concluído. ");
+                    System.out.println("Tempo de execução: " + (end4 - start4)/1000 + " segundos");
+                    break;
+                case '0':
+                    // Consolidação dos registros em um novo arquivo binário
+                    System.out.println("Consolidando registros em um novo arquivo binário...");
+                    CRUD.consolidate(binaryFilePath, keyPair);
+                    break;
+                case '-':
                     System.out.println("Salvando e saindo...");
+                    CRUD.consolidate(binaryFilePath, keyPair);
                     break;
                 default:
                     System.out.println("Opção inválida. Tente novamente.");
@@ -303,48 +184,45 @@ public class Aplicacao {
         }
     }
 
-    public static void atualizaVersao(String arquivoVersao) {
-        try {
-            RandomAccessFile raf = new RandomAccessFile(arquivoVersao, "rw");
-            raf.seek(0);
-            int versao = raf.readInt();
-            if (versao > 10) {
-                System.out.println("Erro: você alcançou o limite de arquivos comprimidos! Limpando arquivos compactados...");
-                deleteCompressedFiles();
-                versao = 0;
+    // Método para criptografar o arquivo
+    public static void encryptFile(String inputFilePath, String encryptedFilePath, KeyPair keyPair) {
+        try (RandomAccessFile inputFile = new RandomAccessFile(inputFilePath, "r"); RandomAccessFile encryptedFile = new RandomAccessFile(encryptedFilePath, "rw")) {
+
+            byte[] buffer = new byte[1]; // Buffer para ler um byte de cada vez
+            while (inputFile.read(buffer) != -1) {
+                byte[] encryptedBytes = keyPair.encryptByte(buffer[0]);
+                encryptedFile.writeInt(encryptedBytes.length); // Escreve o comprimento do array de bytes criptografados
+                encryptedFile.write(encryptedBytes); // Escreve os bytes criptografados
             }
-            raf.seek(0);
-            raf.writeInt(versao + 1);
-            raf.close();
+
+            System.out.println("File encrypted successfully.");
         } catch (IOException e) {
-            try {
-                RandomAccessFile raf = new RandomAccessFile(arquivoVersao, "rw");
-                raf.writeInt(1);
-                raf.close();
-            } catch (IOException e2) {
-                e2.printStackTrace();
-            }
+            System.err.println("Error during encryption: " + e.getMessage());
         }
     }
 
-    public static int getVersao(String arquivoVersao) {
-        try {
-            RandomAccessFile raf = new RandomAccessFile(arquivoVersao, "r");
-            if (raf.length() == 0) {
-                atualizaVersao(arquivoVersao);
+    // Método para descriptografar o arquivo
+    public static void decryptFile(String encryptedFilePath, String decryptedFilePath, KeyPair keyPair) {
+        try (RandomAccessFile encryptedFile = new RandomAccessFile(encryptedFilePath, "r"); RandomAccessFile decryptedFile = new RandomAccessFile(decryptedFilePath, "rw")) {
+            boolean eof = false;
+            while (!eof) {
+                try {
+                    int length = encryptedFile.readInt();
+                    byte[] encryptedBytes = new byte[length];
+                    encryptedFile.readFully(encryptedBytes);
+                    byte decryptedByte = keyPair.decryptByte(encryptedBytes);
+                    decryptedFile.writeByte(decryptedByte);
+                } catch (IOException e) {
+                    eof = true;
+                }
             }
-            int versao = raf.readInt();
-            raf.close();
-            return versao;
-        } catch (FileNotFoundException e) {
-            atualizaVersao(arquivoVersao);
-            return 1;
+            System.out.println("File decrypted successfully.");
         } catch (IOException e) {
-            e.printStackTrace();
-            return -1;
+            System.err.println("Error during decryption: " + e.getMessage());
         }
     }
 
+    // Converte uma data em string para milissegundos
     public static long convertDateToMillis(String dateString) {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         try {
@@ -358,71 +236,14 @@ public class Aplicacao {
         }
     }
 
+    // Converte milissegundos para uma data em string
     public static String convertMillisToDate(long dateInMilliseconds) {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         Date date = new Date(dateInMilliseconds);
         return sdf.format(date);
     }
 
-    public static void verificaArquivos(String binaryFilePath, String versionPath) {
-        boolean binaryFileExists = false;
-        boolean versionFileExists = false;
-        try (RandomAccessFile raf = new RandomAccessFile(binaryFilePath, "r")) {
-            if (raf.length() != 0) binaryFileExists = true;
-        } catch (IOException e) {}
-        try (RandomAccessFile raf2 = new RandomAccessFile(versionPath, "rw")) {
-            int i = 0;
-            if (raf2.length() != 0) {
-                versionFileExists = true;
-                i = getVersao(versionPath);
-                for (int j = (i-1); j > 0; j--) {
-                    File huffmanCompressedFile = new File("binarioHuffmanCompressao"+j+".bin");
-                    File lzwCompressedFile = new File("binarioLZWCompressao"+j+".bin");
-                    if (huffmanCompressedFile.length() == 0 || lzwCompressedFile.length() == 0) {
-                        System.out.println("Inconsistência entre arquivos compactados identificada. Limpando arquivos compactados...");
-                        deleteCompressedFiles();
-                        raf2.seek(0);
-                        raf2.writeInt(1);
-                        break;
-                    }
-                }
-            }
-            if (!binaryFileExists) {
-                raf2.setLength(0);
-                deleteCompressedFiles();
-            }
-        } catch (IOException e) {}
-        if (binaryFileExists && !versionFileExists) {
-            deleteCompressedFiles();
-            atualizaVersao(versionPath);
-        }
-    }
-
-    public static void deleteCompressedFiles() {
-        for(int i = 15; i >= 0; i--) {
-            File huffmanCompressedFile = new File("binarioHuffmanCompressao"+i+".bin");
-            File lzwCompressedFile = new File("binarioLZWCompressao"+i+".bin");
-            huffmanCompressedFile.delete();
-            lzwCompressedFile.delete();
-        }
-    }
-
-    public static HashMap<Character, String> loadCodes(String arquivoCodigos) {
-        HashMap<Character, String> codigos = new HashMap<>();
-        try (RandomAccessFile raf = new RandomAccessFile(arquivoCodigos, "r")) {
-            while (raf.getFilePointer() < raf.length()){
-                char c = raf.readChar();
-                String s = raf.readUTF();
-                codigos.put(c, s);
-            }
-            return codigos;
-        } catch (FileNotFoundException e) {
-            return new HashMap<>();
-        } catch (IOException e) {
-            return new HashMap<>();
-        }
-    }
-
+    // Calcula o hash SHA-256 de uma string
     public static String sha256(String entrada) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

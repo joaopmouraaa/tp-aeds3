@@ -1,0 +1,4 @@
+id;Car Make;Car Model;Horsepower_Torque;Date;0-60 MPH Time (seconds);Price (in USD)
+0;Porsche;911;379, 331;01/01/2022;4;101,200
+1;Lamborghini;Huracan;630, 443;01/01/2021;2.8;274,390
+2;Ferrari;488 GTB;661, 561;01/01/2022;3;333,750
